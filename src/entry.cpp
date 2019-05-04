@@ -13,7 +13,7 @@ std::unordered_map<SDL_Keycode, bool> KEYS;
 
 int main(int argc, char* argv[]) {
 
-  SDL_Surface* scr = sj::CreateWindow();
+  sj::CreateWindow();
 
   while(loop != 0){
     SDL_Event evt;
@@ -37,12 +37,12 @@ int main(int argc, char* argv[]) {
     float rotate = (float) (KEYS[SDLK_LEFT] - KEYS[SDLK_RIGHT]);
     float walk = (float) (KEYS[SDLK_UP] - KEYS[SDLK_DOWN]);
 
-    if(sj::Cell(int(pos.x + walk * dir.x * 0.01),int(pos.y)) == 0)
+    if(sj::Cell(int(pos.x + walk * dir.x * 0.01f),int(pos.y)) == 0)
     {
       pos.x += walk * dir.x * 0.01f;
     }
     
-    if(sj::Cell(int(pos.x),int(pos.y + walk * dir.y * 0.01)) == 0)
+    if(sj::Cell(int(pos.x),int(pos.y + walk * dir.y * 0.01f)) == 0)
     {
       pos.y += walk * dir.y * 0.01f;
     }

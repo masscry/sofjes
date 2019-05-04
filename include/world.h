@@ -19,16 +19,10 @@ namespace sj {
 
   int Cell(uint32_t x, uint32_t y);
 
-  SDL_Surface* CreateWindow();
+  void CreateWindow();
   void UpdateWindow();
   void CloseWindow();
   
-  inline void PutPixel(SDL_Surface* scr, int y, int x, Uint8 r, Uint8 g, Uint8 b)
-  {
-    Uint32 *buffer = (Uint32*)((Uint8 *)scr->pixels + y * scr->pitch + x * 4);
-    *buffer = SDL_MapRGB(scr->format, r, g, b);
-  }
-
   struct vec2f_t {
     float x;
     float y;
