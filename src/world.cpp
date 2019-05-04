@@ -1,4 +1,5 @@
 #include <world.h>
+#include <cmath>
 
 namespace 
 {
@@ -80,8 +81,8 @@ namespace sj {
       float sideDistX;
       float sideDistY;
 
-      float deltaDistX = abs(1.0f/rayDirX);
-      float deltaDistY = abs(1.0f/rayDirY);
+      float deltaDistX = std::abs(1.0f/rayDirX);
+      float deltaDistY = std::abs(1.0f/rayDirY);
 
       float perpWallDist;
 
@@ -99,7 +100,7 @@ namespace sj {
       else
       {
         stepX = 1;
-        sideDistX = (mapX + 1.0 - pos.x) * deltaDistX;
+        sideDistX = (mapX + 1.0f - pos.x) * deltaDistX;
       }
 
       if (rayDirY < 0.0f)
@@ -110,7 +111,7 @@ namespace sj {
       else
       {
         stepY = 1;
-        sideDistY = (mapY + 1.0 - pos.y) * deltaDistY;
+        sideDistY = (mapY + 1.0f - pos.y) * deltaDistY;
       }
 
       while (hit == 0)
@@ -175,9 +176,9 @@ namespace sj {
       }
 
       for (int y = drawStart; y <= drawEnd; ++y) {
-        uint8_t r;
-        uint8_t g;
-        uint8_t b;
+        float r;
+        float g;
+        float b;
 
         int d = y * 256 - WIN_HEIGHT * 128 + lineHeight * 128;
 
@@ -186,20 +187,7 @@ namespace sj {
         r = brick.pixel_data[(brick.height * texY + texX)*3];
         g = brick.pixel_data[(brick.height * texY + texX)*3+1];
         b = brick.pixel_data[(brick.height * texY + texX)*3+2];
-/*
-        switch (sj::Cell(mapX,mapY))
-        {
-          case 1:  r *= 255; g *= 0;   b *= 0;   break;
-          case 2:  r *= 0;   g *= 255; b *= 0;   break;
-          case 3:  r *= 0;   g *= 0;   b *= 255; break;
-          case 4:  r *= 255; g *= 255; b *= 0;   break;
-          case 5:  r *= 0;   g *= 255; b *= 255; break;
-          case 6:  r *= 255; g *= 0;   b *= 255; break;
-          case 7:  r *= 128; g *= 64;  b *= 128; break;
-          case 8:  r *= 64;  g *= 128; b *= 64;  break;
-          default: r *= 255; g *= 255; b *= 255; break;
-        }
-*/
+
         if (perpWallDist <= 1.0f) {
           perpWallDist = 1.0f;
         }
@@ -208,36 +196,39 @@ namespace sj {
         g /= perpWallDist;
         b /= perpWallDist;
 
-        sj::PutPixel(g_mainSurface, y, x, r, g, b);
+        sj::PutPixel(g_mainSurface, y, x, (uint8_t) r, (uint8_t) g, (uint8_t) b);
       }
 
-      double floorXWall, floorYWall;
+      float floorXWall;
+      float floorYWall;
 
       if(side == 0 && rayDirX > 0)
       {
-        floorXWall = mapX;
-        floorYWall = mapY + wallX;
+        floorXWall = (float) mapX;
+        floorYWall = (float) mapY + wallX;
       }
       else if(side == 0 && rayDirX < 0)
       {
-        floorXWall = mapX + 1.0;
+        floorXWall = mapX + 1.0f;
         floorYWall = mapY + wallX;
       }
       else if(side == 1 && rayDirY > 0)
       {
-        floorXWall = mapX + wallX;
-        floorYWall = mapY;
+        floorXWall = (float) mapX + wallX;
+        floorYWall = (float) mapY;
       }
       else
       {
         floorXWall = mapX + wallX;
-        floorYWall = mapY + 1.0;
+        floorYWall = mapY + 1.0f;
       }
 
-      double distWall, distPlayer, currentDist;
+      float distWall;
+      float distPlayer;
+      float currentDist;
 
       distWall = perpWallDist;
-      distPlayer = 0.0;
+      distPlayer = 0.0f;
 
       if (drawEnd < 0) 
       {
@@ -246,16 +237,16 @@ namespace sj {
 
       for(int y = drawEnd + 1; y < WIN_HEIGHT; ++y)
       {
-        uint8_t r;
-        uint8_t g;
-        uint8_t b;
+        float r;
+        float g;
+        float b;
 
-        currentDist = WIN_HEIGHT / (2.0 * y - WIN_HEIGHT);
+        currentDist = WIN_HEIGHT / (2.0f * y - WIN_HEIGHT);
 
-        double weight = (currentDist - distPlayer) / (distWall - distPlayer);
+        float weight = (currentDist - distPlayer) / (distWall - distPlayer);
 
-        double currentFloorX = weight * floorXWall + (1.0 - weight) * pos.x;
-        double currentFloorY = weight * floorYWall + (1.0 - weight) * pos.y;
+        float currentFloorX = weight * floorXWall + (1.0f - weight) * pos.x;
+        float currentFloorY = weight * floorYWall + (1.0f - weight) * pos.y;
 
         int floorTexX, floorTexY;
         floorTexX = int(currentFloorX * brick.width) % brick.width;
@@ -269,8 +260,8 @@ namespace sj {
         g /= currentDist;
         b /= currentDist;
 
-        PutPixel(g_mainSurface, y, x, r, g, b);
-        PutPixel(g_mainSurface, WIN_HEIGHT - y, x, r, g, b);
+        PutPixel(g_mainSurface, y, x, (uint8_t) r, (uint8_t) g, (uint8_t) b);
+        PutPixel(g_mainSurface, WIN_HEIGHT - y, x, (uint8_t) r, (uint8_t) g, (uint8_t) b);
       }
 
     }

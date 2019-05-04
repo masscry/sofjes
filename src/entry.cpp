@@ -1,4 +1,3 @@
-#include <SDL2/SDL.h>
 #include <random>
 #include <cmath>
 #include <unordered_map>
@@ -35,28 +34,28 @@ int main(int argc, char* argv[]) {
       }
     }
 
-    float rotate = KEYS[SDLK_LEFT] - KEYS[SDLK_RIGHT];
-    float walk = KEYS[SDLK_UP] - KEYS[SDLK_DOWN];
+    float rotate = (float) (KEYS[SDLK_LEFT] - KEYS[SDLK_RIGHT]);
+    float walk = (float) (KEYS[SDLK_UP] - KEYS[SDLK_DOWN]);
 
     if(sj::Cell(int(pos.x + walk * dir.x * 0.01),int(pos.y)) == 0)
     {
-      pos.x += walk * dir.x * 0.01;
+      pos.x += walk * dir.x * 0.01f;
     }
     
     if(sj::Cell(int(pos.x),int(pos.y + walk * dir.y * 0.01)) == 0)
     {
-      pos.y += walk * dir.y * 0.01;
+      pos.y += walk * dir.y * 0.01f;
     }
 
     float oldDirX = dir.x;
     
-    dir.x = dir.x * cos(rotate*0.01) - dir.y * sin(rotate*0.01);
-    dir.y = oldDirX * sin(rotate*0.01) + dir.y * cos(rotate*0.01);
+    dir.x = dir.x * cos(rotate*0.01f) - dir.y * sin(rotate*0.01f);
+    dir.y = oldDirX * sin(rotate*0.01f) + dir.y * cos(rotate*0.01f);
     
-    double oldPlaneX = plane.x;
+    float oldPlaneX = plane.x;
     
-    plane.x = plane.x * cos(rotate*0.01) - plane.y * sin(rotate*0.01);
-    plane.y = oldPlaneX * sin(rotate*0.01) + plane.y * cos(rotate*0.01);
+    plane.x = plane.x * std::cos(rotate*0.01f) - plane.y * std::sin(rotate*0.01f);
+    plane.y = oldPlaneX * std::sin(rotate*0.01f) + plane.y * std::cos(rotate*0.01f);
 
     sj::Render(pos, dir, plane);
     sj::UpdateWindow();
