@@ -59,8 +59,11 @@ namespace sj {
 		g_mainBuffer = (uint32_t*)malloc(sizeof(uint32_t) * WIN_WIDTH * WIN_HEIGHT);
 	}
 
-	void UpdateWindow() {
+	void UpdateWindow(float frameTime) {
+		char text[256];
 		SDL_UpdateWindowSurface(g_mainWin);
+		snprintf(text, 256, "FPS: %3.1f", 1.0f/frameTime);
+		SDL_SetWindowTitle(g_mainWin, text);
 	}
 
 	void CloseWindow() {
@@ -92,6 +95,15 @@ namespace sj {
 			bufp += g_mainSurface->pitch / 4;
 			bufp -= WIN_WIDTH;
 		}
+	}
+
+  float FrameTime() {
+		static float oldTime = 0; 
+		static float time = 0;
+
+		oldTime = time;
+		time = SDL_GetTicks();
+		return (time-oldTime)/1000.0f;
 	}
 
 	void Render(vec2f_t pos, vec2f_t dir, vec2f_t plane) {

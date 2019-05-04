@@ -20,13 +20,15 @@ namespace sj {
   int Cell(uint32_t x, uint32_t y);
 
   void CreateWindow();
-  void UpdateWindow();
+  void UpdateWindow(float frameTime);
   void CloseWindow();
   
   struct vec2f_t {
     float x;
     float y;
   };
+
+  float FrameTime();
 
   void Render(vec2f_t pos, vec2f_t dir, vec2f_t plane);
 

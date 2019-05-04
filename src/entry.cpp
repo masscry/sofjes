@@ -34,31 +34,33 @@ int main(int argc, char* argv[]) {
       }
     }
 
+    float frameTime = sj::FrameTime();
+
     float rotate = (float) (KEYS[SDLK_LEFT] - KEYS[SDLK_RIGHT]);
     float walk = (float) (KEYS[SDLK_UP] - KEYS[SDLK_DOWN]);
 
-    if(sj::Cell(int(pos.x + walk * dir.x * 0.01f),int(pos.y)) == 0)
+    if(sj::Cell(int(pos.x + walk * dir.x * frameTime),int(pos.y)) == 0)
     {
-      pos.x += walk * dir.x * 0.01f;
+      pos.x += walk * dir.x * frameTime;
     }
     
-    if(sj::Cell(int(pos.x),int(pos.y + walk * dir.y * 0.01f)) == 0)
+    if(sj::Cell(int(pos.x),int(pos.y + walk * dir.y * frameTime)) == 0)
     {
-      pos.y += walk * dir.y * 0.01f;
+      pos.y += walk * dir.y * frameTime;
     }
 
     float oldDirX = dir.x;
     
-    dir.x = dir.x * cos(rotate*0.01f) - dir.y * sin(rotate*0.01f);
-    dir.y = oldDirX * sin(rotate*0.01f) + dir.y * cos(rotate*0.01f);
+    dir.x = dir.x * cos(rotate*frameTime) - dir.y * sin(rotate*frameTime);
+    dir.y = oldDirX * sin(rotate*frameTime) + dir.y * cos(rotate*frameTime);
     
     float oldPlaneX = plane.x;
     
-    plane.x = plane.x * std::cos(rotate*0.01f) - plane.y * std::sin(rotate*0.01f);
-    plane.y = oldPlaneX * std::sin(rotate*0.01f) + plane.y * std::cos(rotate*0.01f);
+    plane.x = plane.x * std::cos(rotate*frameTime) - plane.y * std::sin(rotate*frameTime);
+    plane.y = oldPlaneX * std::sin(rotate*frameTime) + plane.y * std::cos(rotate*frameTime);
 
     sj::Render(pos, dir, plane);
-    sj::UpdateWindow();
+    sj::UpdateWindow(frameTime);
   }
 
   sj::CloseWindow();
