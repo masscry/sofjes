@@ -1,5 +1,6 @@
 #include <world.h>
 #include <cmath>
+#include <vector>
 
 namespace
 {
@@ -80,6 +81,11 @@ namespace sj {
 		g_mainBuffer[y * WIN_WIDTH + x] = RGBtoINT(r, g, b);
 	}
 
+	inline void PutPixel(int y, int x, uint32_t col) 
+	{
+		g_mainBuffer[y * WIN_WIDTH + x] = col;
+	}
+
 	void DrawBuffer(Uint32 * buffer)
 	{
 		uint32_t* bufp;
@@ -106,206 +112,155 @@ namespace sj {
 		return (time-oldTime)/1000.0f;
 	}
 
-	void Render(vec2f_t pos, vec2f_t dir, vec2f_t plane) {
-		for (int x = 0; x < sj::WIN_WIDTH; ++x) {
-			float camX = 2 * x / (float)sj::WIN_WIDTH - 1;
+	struct hit_t {
+		float dist;
+		int side;
+	};
 
-			float rayDirX = dir.x + plane.x * camX;
-			float rayDirY = dir.y + plane.y * camX;
+	hit_t CastRay(vec2f_t pos, vec2i_t map, vec2f_t rayDir, int x) {
 
-			int mapX = int(pos.x);
-			int mapY = int(pos.y);
+		float sideDistX;
+		float sideDistY;
 
-			float sideDistX;
-			float sideDistY;
+		float deltaDistX = std::abs(1.0f / rayDir.x);
+		float deltaDistY = std::abs(1.0f / rayDir.y);
 
-			float deltaDistX = std::abs(1.0f / rayDirX);
-			float deltaDistY = std::abs(1.0f / rayDirY);
+		int stepX;
+		int stepY;
 
-			float perpWallDist;
+		int hit = 0;
+		int side;
 
-			int stepX;
-			int stepY;
-
-			int hit = 0;
-			int side;
-
-			if (rayDirX < 0.0f)
-			{
-				stepX = -1;
-				sideDistX = (pos.x - mapX) * deltaDistX;
-			}
-			else
-			{
-				stepX = 1;
-				sideDistX = (mapX + 1.0f - pos.x) * deltaDistX;
-			}
-
-			if (rayDirY < 0.0f)
-			{
-				stepY = -1;
-				sideDistY = (pos.y - mapY) * deltaDistY;
-			}
-			else
-			{
-				stepY = 1;
-				sideDistY = (mapY + 1.0f - pos.y) * deltaDistY;
-			}
-
-			while (hit == 0)
-			{
-				if (sideDistX < sideDistY)
-				{
-					sideDistX += deltaDistX;
-					mapX += stepX;
-					side = 0;
-				}
-				else
-				{
-					sideDistY += deltaDistY;
-					mapY += stepY;
-					side = 1;
-				}
-				if (sj::Cell(mapX, mapY) > 0)
-				{
-					hit = 1;
-				}
-			}
-
-			if (side == 0)
-			{
-				perpWallDist = (mapX - pos.x + (1 - stepX) / 2) / rayDirX;
-			}
-			else
-			{
-				perpWallDist = (mapY - pos.y + (1 - stepY) / 2) / rayDirY;
-			}
-
-			int lineHeight = (int)(sj::WIN_HEIGHT / perpWallDist);
-
-			int drawStart = -lineHeight / 2 + sj::WIN_HEIGHT / 2;
-
-			if (drawStart < 0)
-			{
-				drawStart = 0;
-			}
-			int drawEnd = lineHeight / 2 + sj::WIN_HEIGHT / 2;
-			if (drawEnd >= sj::WIN_HEIGHT)
-			{
-				drawEnd = sj::WIN_HEIGHT - 1;
-			}
-
-			float wallX;
-
-			if (side == 0) {
-				wallX = pos.y + perpWallDist * rayDirY;
-			}
-			else {
-				wallX = pos.x + perpWallDist * rayDirX;
-			}
-			wallX -= floor(wallX);
-
-			int texX = (int)(wallX * ((double)brick.width));
-			if (side == 0 && rayDirX > 0) {
-				texX = brick.width - texX - 1;
-			}
-			if (side == 1 && rayDirY < 0) {
-				texX = brick.width - texX - 1;
-			}
-
-			for (int y = drawStart; y <= drawEnd; ++y) {
-				float r;
-				float g;
-				float b;
-
-				int d = y * 256 - WIN_HEIGHT * 128 + lineHeight * 128;
-
-				int texY = ((d * brick.height) / lineHeight) / 256;
-
-				r = brick.pixel_data[(brick.height * texY + texX) * 3];
-				g = brick.pixel_data[(brick.height * texY + texX) * 3 + 1];
-				b = brick.pixel_data[(brick.height * texY + texX) * 3 + 2];
-
-				if (perpWallDist <= 1.0f) {
-					perpWallDist = 1.0f;
-				}
-
-				r /= perpWallDist;
-				g /= perpWallDist;
-				b /= perpWallDist;
-
-				sj::PutPixel(y, x, (uint8_t)r, (uint8_t)g, (uint8_t)b);
-			}
-
-			float floorXWall;
-			float floorYWall;
-
-			if (side == 0 && rayDirX > 0)
-			{
-				floorXWall = (float)mapX;
-				floorYWall = (float)mapY + wallX;
-			}
-			else if (side == 0 && rayDirX < 0)
-			{
-				floorXWall = mapX + 1.0f;
-				floorYWall = mapY + wallX;
-			}
-			else if (side == 1 && rayDirY > 0)
-			{
-				floorXWall = (float)mapX + wallX;
-				floorYWall = (float)mapY;
-			}
-			else
-			{
-				floorXWall = mapX + wallX;
-				floorYWall = mapY + 1.0f;
-			}
-
-			float distWall;
-			float distPlayer;
-			float currentDist;
-
-			distWall = perpWallDist;
-			distPlayer = 0.0f;
-
-			if (drawEnd < 0)
-			{
-				drawEnd = WIN_HEIGHT;
-			}
-
-			for (int y = drawEnd + 1; y < WIN_HEIGHT; ++y)
-			{
-				float r;
-				float g;
-				float b;
-
-				currentDist = WIN_HEIGHT / (2.0f * y - WIN_HEIGHT);
-
-				float weight = (currentDist - distPlayer) / (distWall - distPlayer);
-
-				float currentFloorX = weight * floorXWall + (1.0f - weight) * pos.x;
-				float currentFloorY = weight * floorYWall + (1.0f - weight) * pos.y;
-
-				int floorTexX, floorTexY;
-				floorTexX = int(currentFloorX * brick.width) % brick.width;
-				floorTexY = int(currentFloorY * brick.height) % brick.height;
-
-				r = brick.pixel_data[(brick.height * floorTexY + floorTexX) * 3];
-				g = brick.pixel_data[(brick.height * floorTexY + floorTexX) * 3 + 1];
-				b = brick.pixel_data[(brick.height * floorTexY + floorTexX) * 3 + 2];
-
-				r /= currentDist;
-				g /= currentDist;
-				b /= currentDist;
-
-				PutPixel(y, x, (uint8_t)r, (uint8_t)g, (uint8_t)b);
-				PutPixel(WIN_HEIGHT - y, x, (uint8_t)r, (uint8_t)g, (uint8_t)b);
-			}
-
+		if (rayDir.x < 0.0f)
+		{
+			stepX = -1;
+			sideDistX = (pos.x - map.x) * deltaDistX;
+		}
+		else
+		{
+			stepX = 1;
+			sideDistX = (map.x + 1.0f - pos.x) * deltaDistX;
 		}
 
-		DrawBuffer(g_mainBuffer);
+		if (rayDir.y < 0.0f)
+		{
+			stepY = -1;
+			sideDistY = (pos.y - map.y) * deltaDistY;
+		}
+		else
+		{
+			stepY = 1;
+			sideDistY = (map.y + 1.0f - pos.y) * deltaDistY;
+		}
 
+		while (hit == 0)
+		{
+			if (sideDistX < sideDistY)
+			{
+				sideDistX += deltaDistX;
+				map.x += stepX;
+				side = 0;
+			}
+			else
+			{
+				sideDistY += deltaDistY;
+				map.y += stepY;
+				side = 1;
+			}
+			if (sj::Cell(map.x, map.y) > 0)
+			{
+				hit = 1;
+			}
+		}
+
+		if (side == 0)
+		{
+			return hit_t{(map.x - pos.x + (1 - stepX) / 2) / rayDir.x, side};
+		}
+		else
+		{
+			return hit_t{(map.y - pos.y + (1 - stepY) / 2) / rayDir.y, side};
+		}
+	}
+
+	void SampleWall(const brick_t& tex, int xCoord, uint32_t* pTexLine, int offset, float lineHeight, float dist, int total){
+		float tycoord = brick.height/lineHeight;
+		
+		for (int i = 0; i < total; ++i) {
+			int pixel = (xCoord*brick.width + (int)((i+offset)*tycoord))*3;
+			pTexLine[i] = RGBtoINT(
+				brick.pixel_data[pixel]/dist,
+				brick.pixel_data[pixel + 1]/dist,
+				brick.pixel_data[pixel + 2]/dist 
+			);
+		}
+	}
+
+	struct wall_t {
+		float x;
+		int start;
+		int end;
+	};
+
+	wall_t RenderWalls(int x, hit_t hit, vec2f_t pos, vec2f_t rayDir) {
+		uint32_t texLine[WIN_HEIGHT];
+		float lineHeight = sj::WIN_HEIGHT / hit.dist;
+
+		int lineStart = (int)(-lineHeight / 2.0f + sj::WIN_HEIGHT / 2.0f);
+		int drawStart = lineStart;
+		if (drawStart < 0)
+		{
+			drawStart = 0;
+		}
+
+		int drawEnd = (int)(lineHeight / 2.0f + sj::WIN_HEIGHT / 2.0f);
+		if (drawEnd >= sj::WIN_HEIGHT)
+		{
+			drawEnd = sj::WIN_HEIGHT - 1;
+		}
+
+		float wallX;
+
+		if (hit.side == 0) {
+			wallX = pos.y + hit.dist * rayDir.y;
+		}
+		else {
+			wallX = pos.x + hit.dist * rayDir.x;
+		}
+		wallX -= floor(wallX);
+
+		int texX = (int)(wallX * ((double)brick.width));
+		if (hit.side == 0 && rayDir.x > 0) {
+			texX = brick.width - texX - 1;
+		}
+		if (hit.side == 1 && rayDir.y < 0) {
+			texX = brick.width - texX - 1;
+		}
+
+		SampleWall(brick, texX, texLine, drawStart-lineStart, lineHeight, (hit.dist < 1.0f)?1.0f:hit.dist, drawEnd + 1 - drawStart);
+
+		for (int y = drawStart; y <= drawEnd; ++y) {
+			sj::PutPixel(y, x*4, texLine[y-drawStart]);
+			sj::PutPixel(y, x*4+1, texLine[y-drawStart]);
+			sj::PutPixel(y, x*4+2, texLine[y-drawStart]);
+			sj::PutPixel(y, x*4+3, texLine[y-drawStart]);
+		}
+		return wall_t{wallX, drawStart, drawEnd};
+	}
+
+	void Render(vec2f_t pos, vec2f_t dir, vec2f_t plane) {
+		float camPart = 2.0f/sj::WIN_WIDTH;
+		for (int x = 0; x < sj::WIN_WIDTH/4; ++x) {
+			float camX = camPart*x*4.0f - 1;
+			vec2f_t rayDir = {dir.x + plane.x * camX, dir.y + plane.y * camX};
+			vec2i_t map = {int(pos.x), int(pos.y)};
+
+			hit_t hit = CastRay(pos, map, rayDir, x);
+
+			wall_t wall = RenderWalls(x, hit, pos, rayDir);
+
+			DrawBuffer(g_mainBuffer);
+		}
 	}
 
 

@@ -1,6 +1,19 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.9)
 
 project(sofjes CXX)
+
+include(CheckIPOSupported)
+check_ipo_supported(RESULT LTO_SUPPORT OUTPUT LTO_ERROR_TEXT)
+
+if(LTO_SUPPORT)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+    message(STATUS "IPO / LTO enabled")
+else(LTO_SUPPORT)
+    message(STATUS "IPO / LTO not supported: <${LTO_ERROR_TEXT}>")
+endif(LTO_SUPPORT)
+
+set(CXX_STANDARD 11)
+set(CXX_STANDARD_REQUIRED TRUE)
 
 find_package(SDL2 REQUIRED)
 

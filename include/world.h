@@ -28,6 +28,11 @@ namespace sj {
     float y;
   };
 
+  struct vec2i_t {
+    int x;
+    int y;
+  };
+
   float FrameTime();
 
   void Render(vec2f_t pos, vec2f_t dir, vec2f_t plane);
