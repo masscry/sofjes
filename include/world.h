@@ -11,40 +11,40 @@
 
 namespace sj {
 
-  const uint32_t MAP_WIDTH  = 24;
-  const uint32_t MAP_HEIGHT = 24;
-  
-  const uint32_t WIN_WIDTH  = 640;
-  const uint32_t WIN_HEIGHT = 480;
+	const uint32_t MAP_WIDTH = 24;
+	const uint32_t MAP_HEIGHT = 24;
 
-  int Cell(uint32_t x, uint32_t y);
+	const uint32_t WIN_WIDTH = 1024;
+	const uint32_t WIN_HEIGHT = 768;
 
-  void CreateWindow();
-  void UpdateWindow(float frameTime);
-  void CloseWindow();
-  
-  struct vec2f_t {
-    float x;
-    float y;
-  };
+	int Cell(uint32_t x, uint32_t y);
 
-  struct vec2i_t {
-    int x;
-    int y;
-  };
+	void CreateWindow();
+	void UpdateWindow(float frameTime);
+	void CloseWindow();
 
-  float FrameTime();
+	struct vec2f_t {
+		float x;
+		float y;
+	};
 
-  void Render(vec2f_t pos, vec2f_t dir, vec2f_t plane);
+	struct vec2i_t {
+		int x;
+		int y;
+	};
 
-  struct brick_t {
-    uint32_t width;
-    uint32_t height;
-    uint32_t bytes_per_pixel; 
-    uint8_t  pixel_data[16 * 16 * 3 + 1];
-  };
+	float FrameTime();
 
-  extern const brick_t brick;
+	void Render(vec2f_t pos, vec2f_t dir, vec2f_t plane);
+
+	struct brick_t {
+		uint32_t width;
+		uint32_t height;
+		uint32_t bytes_per_pixel;
+		uint8_t  pixel_data[16 * 16 * 3 + 1];
+	};
+
+	extern const brick_t brick;
 
 }
 

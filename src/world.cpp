@@ -63,7 +63,7 @@ namespace sj {
 	void UpdateWindow(float frameTime) {
 		char text[256];
 		SDL_UpdateWindowSurface(g_mainWin);
-		snprintf(text, 256, "FPS: %3.1f", 1.0f/frameTime);
+		snprintf(text, 256, "FPS: %3.1f", 1.0f / frameTime);
 		SDL_SetWindowTitle(g_mainWin, text);
 	}
 
@@ -81,7 +81,7 @@ namespace sj {
 		g_mainBuffer[y * WIN_WIDTH + x] = RGBtoINT(r, g, b);
 	}
 
-	inline void PutPixel(int y, int x, uint32_t col) 
+	inline void PutPixel(int y, int x, uint32_t col)
 	{
 		g_mainBuffer[y * WIN_WIDTH + x] = col;
 	}
@@ -103,13 +103,13 @@ namespace sj {
 		}
 	}
 
-  float FrameTime() {
-		static float oldTime = 0; 
-		static float time = 0;
+	float FrameTime() {
+		static uint32_t oldTime = 0;
+		static uint32_t time = 0;
 
 		oldTime = time;
 		time = SDL_GetTicks();
-		return (time-oldTime)/1000.0f;
+		return (time - oldTime) / 1000.0f;
 	}
 
 	struct hit_t {
@@ -118,7 +118,7 @@ namespace sj {
 		vec2i_t map;
 	};
 
-	hit_t CastRay(vec2f_t pos, vec2i_t map, vec2f_t rayDir, int x) {
+	hit_t CastRay(vec2f_t pos, vec2f_t rayDir, int x) {
 
 		float sideDistX;
 		float sideDistY;
@@ -131,6 +131,8 @@ namespace sj {
 
 		int hit = 0;
 		int side;
+
+		vec2i_t map{ int(pos.x), int(pos.y) };
 
 		if (rayDir.x < 0.0f)
 		{
@@ -176,23 +178,23 @@ namespace sj {
 
 		if (side == 0)
 		{
-			return hit_t{(map.x - pos.x + (1 - stepX) / 2) / rayDir.x, side, map};
+			return hit_t{ (map.x - pos.x + (1 - stepX) / 2) / rayDir.x, side, map };
 		}
 		else
 		{
-			return hit_t{(map.y - pos.y + (1 - stepY) / 2) / rayDir.y, side, map};
+			return hit_t{ (map.y - pos.y + (1 - stepY) / 2) / rayDir.y, side, map };
 		}
 	}
 
-	void SampleWall(const brick_t& tex, int xCoord, uint32_t* pTexLine, int offset, float lineHeight, float dist, int total){
-		float tycoord = brick.height/lineHeight;
-		
+	void SampleWall(const brick_t & tex, int xCoord, uint32_t * pTexLine, int offset, float lineHeight, float dist, int total) {
+		float tycoord = brick.height / lineHeight;
+
 		for (int i = 0; i < total; ++i) {
-			int pixel = (xCoord*brick.width + (int)((i+offset)*tycoord))*3;
+			int pixel = (xCoord * brick.width + (int)((i + offset) * tycoord)) * 3;
 			pTexLine[i] = RGBtoINT(
-				brick.pixel_data[pixel]/dist,
-				brick.pixel_data[pixel + 1]/dist,
-				brick.pixel_data[pixel + 2]/dist 
+				(uint8_t)(brick.pixel_data[pixel] / dist),
+				(uint8_t)(brick.pixel_data[pixel + 1] / dist),
+				(uint8_t)(brick.pixel_data[pixel + 2] / dist)
 			);
 		}
 	}
@@ -238,90 +240,72 @@ namespace sj {
 			texX = brick.width - texX - 1;
 		}
 
-		SampleWall(brick, texX, texLine, drawStart-lineStart, lineHeight, (hit.dist < 1.0f)?1.0f:hit.dist, drawEnd + 1 - drawStart);
+		SampleWall(brick, texX, texLine, drawStart - lineStart, lineHeight, (hit.dist < 1.0f) ? 1.0f : hit.dist, drawEnd + 1 - drawStart);
 
 		for (int y = drawStart; y <= drawEnd; ++y) {
-			sj::PutPixel(y, x*4, texLine[y-drawStart]);
-			sj::PutPixel(y, x*4+1, texLine[y-drawStart]);
-			sj::PutPixel(y, x*4+2, texLine[y-drawStart]);
-			sj::PutPixel(y, x*4+3, texLine[y-drawStart]);
+			sj::PutPixel(y, x * 4, texLine[y - drawStart]);
+			sj::PutPixel(y, x * 4 + 1, texLine[y - drawStart]);
+			sj::PutPixel(y, x * 4 + 2, texLine[y - drawStart]);
+			sj::PutPixel(y, x * 4 + 3, texLine[y - drawStart]);
 		}
-		return wall_t{wallX, drawStart, drawEnd};
+		return wall_t{ wallX, drawStart, drawEnd };
+	}
+
+	vec2f_t FloorCast(hit_t hit, vec2f_t rayDir, wall_t wall) {
+		if (hit.side == 0 && rayDir.x > 0)
+		{
+			return vec2f_t{ (float)hit.map.x, (float)hit.map.y + wall.x };
+		}
+		else if (hit.side == 0 && rayDir.x < 0)
+		{
+			return vec2f_t{ hit.map.x + 1.0f, hit.map.y + wall.x };
+		}
+		else if (hit.side == 1 && rayDir.y > 0)
+		{
+			return vec2f_t{ (float)hit.map.x + wall.x, (float)hit.map.y };
+		}	
+		return vec2f_t{ hit.map.x + wall.x, hit.map.y + 1.0f };
+	}
+
+	void RenderFloor(vec2f_t floorWall, float distWall, int wallEnd, vec2f_t pos, int x) {
+		for (int y = wallEnd + 1; y < WIN_HEIGHT; ++y)
+		{
+			float currentDist = WIN_HEIGHT / (2.0f * y - WIN_HEIGHT);
+
+			float weight = currentDist / distWall;
+
+			float currentFloorX = weight * floorWall.x + (1.0f - weight) * pos.x;
+			float currentFloorY = weight * floorWall.y + (1.0f - weight) * pos.y;
+
+			int floorTexX, floorTexY;
+			floorTexX = int(currentFloorX * brick.width) % brick.width;
+			floorTexY = int(currentFloorY * brick.height) % brick.height;
+
+			uint32_t col = RGBtoINT(
+				(uint8_t)(brick.pixel_data[(brick.height * floorTexY + floorTexX) * 3] / currentDist),
+				(uint8_t)(brick.pixel_data[(brick.height * floorTexY + floorTexX) * 3 + 1] / currentDist),
+				(uint8_t)(brick.pixel_data[(brick.height * floorTexY + floorTexX) * 3 + 2] / currentDist)
+			);
+
+			PutPixel(y, x * 4, col);
+			PutPixel(y, x * 4 + 1, col);
+			PutPixel(y, x * 4 + 2, col);
+			PutPixel(y, x * 4 + 3, col);
+		}
 	}
 
 	void Render(vec2f_t pos, vec2f_t dir, vec2f_t plane) {
-		float camPart = 2.0f/sj::WIN_WIDTH;
-		for (int x = 0; x < sj::WIN_WIDTH/4; ++x) {
-			float camX = camPart*x*4.0f - 1;
-			vec2f_t rayDir = {dir.x + plane.x * camX, dir.y + plane.y * camX};
+		float camPart = 2.0f / sj::WIN_WIDTH;
+		for (int x = 0; x < sj::WIN_WIDTH / 4; ++x) {
+			float camX = camPart * x * 4.0f - 1;
+			vec2f_t rayDir = { dir.x + plane.x * camX, dir.y + plane.y * camX };
 
-			hit_t hit = CastRay(pos, vec2i_t{int(pos.x), int(pos.y)}, rayDir, x);
+			hit_t hit = CastRay(pos, rayDir, x);
 			wall_t wall = RenderWalls(x, hit, pos, rayDir);
-
-			float floorXWall;
-			float floorYWall;
-
-			if (hit.side == 0 && rayDir.x > 0)
-			{
-				floorXWall = (float)hit.map.x;
-				floorYWall = (float)hit.map.y + wall.x;
-			}
-			else if (hit.side == 0 && rayDir.x < 0)
-			{
-				floorXWall = hit.map.x + 1.0f;
-				floorYWall = hit.map.y + wall.x;
-			}
-			else if (hit.side == 1 && rayDir.y > 0)
-			{
-				floorXWall = (float)hit.map.x + wall.x;
-				floorYWall = (float)hit.map.y;
-			}
-			else
-			{
-				floorXWall = hit.map.x + wall.x;
-				floorYWall = hit.map.y + 1.0f;
-			}
-
-			float distWall;
-			float distPlayer;
-			float currentDist;
-
-			distWall = hit.dist;
-			distPlayer = 0.0f;
-
-			if (wall.end < 0)
-			{
-				wall.end = WIN_HEIGHT;
-			}
-
-			for (int y = wall.end + 1; y < WIN_HEIGHT; ++y)
-			{
-				currentDist = WIN_HEIGHT / (2.0f * y - WIN_HEIGHT);
-
-				float weight = (currentDist - distPlayer) / (distWall - distPlayer);
-
-				float currentFloorX = weight * floorXWall + (1.0f - weight) * pos.x;
-				float currentFloorY = weight * floorYWall + (1.0f - weight) * pos.y;
-
-				int floorTexX, floorTexY;
-				floorTexX = int(currentFloorX * brick.width) % brick.width;
-				floorTexY = int(currentFloorY * brick.height) % brick.height;
-
-				uint32_t col = RGBtoINT(
-					brick.pixel_data[(brick.height * floorTexY + floorTexX) * 3]/currentDist,
-					brick.pixel_data[(brick.height * floorTexY + floorTexX) * 3 + 1]/currentDist,
-					brick.pixel_data[(brick.height * floorTexY + floorTexX) * 3 + 2]/currentDist
-				);
-
-				PutPixel(y, x*4,   col);
-				PutPixel(y, x*4+1, col);
-				PutPixel(y, x*4+2, col);
-				PutPixel(y, x*4+3, col);
-			}
-
-			DrawBuffer(g_mainBuffer);
-
+			vec2f_t floorWall = FloorCast(hit, rayDir, wall);
+			RenderFloor(floorWall, hit.dist, wall.end, pos, x);
 		}
+		DrawBuffer(g_mainBuffer);
 	}
 
 
