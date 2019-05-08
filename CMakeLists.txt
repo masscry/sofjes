@@ -24,9 +24,14 @@ endif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 find_package(SDL2 REQUIRED)
 
 add_executable(sofjes
+  include/world.h
+  include/targa.h
+  include/texture_t.h
+  include/vecmath.h
   src/entry.cpp
   src/world.cpp
-  resources/bricks.cpp
+  src/targa.cpp
+  src/texture_t.cpp
 )
 
 target_include_directories(sofjes PUBLIC ${SDL2_INCLUDE_DIRS})

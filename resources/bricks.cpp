@@ -33,8 +33,6 @@ namespace {
 
 namespace sj {
 
-  const sj::brick_t brick = {
-    16, 16, 3, brick_pixels
-  };
+  const sj::texture_t brick(16, 16, 3, brick_pixels);
 
 }

@@ -1,43 +1,48 @@
-#include <world.h>
 #include <cmath>
 #include <vector>
+#include <cstdio>
+
+#include <world.h>
+#include <targa.h>
 
 namespace
 {
 	int map[sj::MAP_WIDTH][sj::MAP_HEIGHT] =
 	{
-	  {4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,7,7,7,7,7,7,7,7},
-	  {4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,7},
-	  {4,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7},
-	  {4,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7},
-	  {4,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,7},
-	  {4,0,4,0,0,0,0,5,5,5,5,5,5,5,5,5,7,7,0,7,7,7,7,7},
-	  {4,0,5,0,0,0,0,5,0,5,0,5,0,5,0,5,7,0,0,0,7,7,7,1},
-	  {4,0,6,0,0,0,0,5,0,0,0,0,0,0,0,5,7,0,0,0,0,0,0,8},
-	  {4,0,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,7,7,1},
-	  {4,0,8,0,0,0,0,5,0,0,0,0,0,0,0,5,7,0,0,0,0,0,0,8},
-	  {4,0,0,0,0,0,0,5,0,0,0,0,0,0,0,5,7,0,0,0,7,7,7,1},
-	  {4,0,0,0,0,0,0,5,5,5,5,0,5,5,5,5,7,7,7,7,7,7,7,1},
-	  {6,6,6,6,6,6,6,6,6,6,6,0,6,6,6,6,6,6,6,6,6,6,6,6},
-	  {8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4},
-	  {6,6,6,6,6,6,0,6,6,6,6,0,6,6,6,6,6,6,6,6,6,6,6,6},
-	  {4,4,4,4,4,4,0,4,4,4,6,0,6,2,2,2,2,2,2,2,3,3,3,3},
-	  {4,0,0,0,0,0,0,0,0,4,6,0,6,2,0,0,0,0,0,2,0,0,0,2},
-	  {4,0,0,0,0,0,0,0,0,0,0,0,6,2,0,0,5,0,0,2,0,0,0,2},
-	  {4,0,0,0,0,0,0,0,0,4,6,0,6,2,0,0,0,0,0,2,2,0,2,2},
-	  {4,0,6,0,6,0,0,0,0,4,6,0,0,0,0,0,5,0,0,0,0,0,0,2},
-	  {4,0,0,5,0,0,0,0,0,4,6,0,6,2,0,0,0,0,0,2,2,0,2,2},
-	  {4,0,6,0,6,0,0,0,0,4,6,0,6,2,0,0,5,0,0,2,0,0,0,2},
-	  {4,0,0,0,0,0,0,0,0,4,6,0,6,2,0,0,0,0,0,2,0,0,0,2},
-	  {4,4,4,4,4,4,4,4,4,4,1,1,1,2,2,2,2,2,2,3,3,3,3,3}
+	  {416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416},
+	  {416,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,416,0,0,0,0,0,0,416},
+	  {416,0,416,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,416},
+	  {416,0,416,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,416},
+	  {416,0,416,0,0,0,0,0,0,0,0,0,0,0,0,0,416,0,0,0,0,0,0,416},
+	  {416,0,416,0,0,0,0,416,416,416,416,416,416,416,416,416,416,416,0,416,416,416,416,416},
+	  {416,0,416,0,0,0,0,416,0,416,0,416,0,416,0,416,416,0,0,0,416,416,416,416},
+	  {416,0,416,0,0,0,0,416,0,0,0,0,0,0,0,416,416,0,0,0,0,0,0,416},
+	  {416,0,416,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,416,416,416,416},
+	  {416,0,416,0,0,0,0,416,0,0,0,0,0,0,0,416,416,0,0,0,0,0,0,416},
+	  {416,0,0,0,0,0,0,416,0,0,0,0,0,0,0,416,416,0,0,0,416,416,416,416},
+	  {416,0,0,0,0,0,0,416,416,416,416,0,416,416,416,416,416,416,416,416,416,416,416,416},
+	  {416,416,416,416,416,416,416,416,416,416,416,0,416,416,416,416,416,416,416,416,416,416,416,416},
+	  {8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,416},
+	  {416,416,416,416,416,416,0,416,416,416,416,0,416,416,416,416,416,416,416,416,416,416,416,416},
+	  {416,416,416,416,416,416,0,416,416,416,416,0,416,416,416,416,416,416,416,416,416,416,416,416},
+	  {416,0,0,0,0,0,0,0,0,416,416,0,416,416,0,0,0,0,0,416,0,0,0,416},
+	  {416,0,0,0,0,0,0,0,0,0,0,0,416,416,0,0,416,0,0,416,0,0,0,416},
+	  {416,0,0,0,0,0,0,0,0,416,416,0,416,416,0,0,0,0,0,416,416,0,416,416},
+	  {416,0,416,0,416,0,0,0,0,416,416,0,0,0,0,0,416,0,0,0,0,0,0,416},
+	  {416,0,0,416,0,0,0,0,0,416,416,0,416,416,0,0,0,0,0,416,416,0,416,416},
+	  {416,0,416,0,416,0,0,0,0,416,416,0,416,416,0,0,416,0,0,416,0,0,0,416},
+	  {416,0,0,0,0,0,0,0,0,416,416,0,416,416,0,0,0,0,0,416,0,0,0,416},
+	  {416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416}
 	};
 
 	SDL_Window* g_mainWin = nullptr;
 	SDL_Surface* g_mainSurface = nullptr;
 	uint32_t* g_mainBuffer = nullptr;
+	sj::texture_t g_mainTexture;
+
+	std::vector<sj::texture_t> g_mainAtlas;
 
 }
-
 
 namespace sj {
 
@@ -58,6 +63,12 @@ namespace sj {
 
 		g_mainSurface = SDL_GetWindowSurface(g_mainWin);
 		g_mainBuffer = (uint32_t*)malloc(sizeof(uint32_t) * WIN_WIDTH * WIN_HEIGHT);
+
+		FILE* input = fopen("./resources/colored.tga", "rb");
+		g_mainTexture = tgaLoad(input);
+		fclose(input);
+
+		g_mainAtlas = g_mainTexture.GenerateAtlas(vec2i_t{32, 32}, vec2i_t{1, 1});
 	}
 
 	void UpdateWindow(float frameTime) {
@@ -186,7 +197,7 @@ namespace sj {
 		}
 	}
 
-	void SampleWall(const brick_t & tex, float xCoord, uint32_t* pTexels, float lineHeight, int totalTexels, float dist) {
+	void SampleWall(const texture_t & tex, float xCoord, uint32_t* pTexels, float lineHeight, int totalTexels, float dist) {
 		float step = 1.0f/lineHeight;
 		float toffset = (lineHeight - totalTexels)/2.0f;
 		for (int i = 0; i < totalTexels; ++i) {
@@ -239,7 +250,7 @@ namespace sj {
 			hit.dist = 1.0f;
 		}
 
-		SampleWall(brick, wallX, texLine, lineHeight, drawEnd-drawStart+1, hit.dist);
+		SampleWall(g_mainAtlas[Cell(hit.map.x,hit.map.y)], wallX, texLine, lineHeight, drawEnd-drawStart+1, hit.dist);
 
 		for (int y = drawStart; y <= drawEnd; ++y) {
 			sj::PutPixel(y, x * 4, texLine[y - drawStart]);
@@ -266,7 +277,7 @@ namespace sj {
 		return vec2f_t{ hit.map.x + wall.x, hit.map.y + 1.0f };
 	}
 
-	void RenderFloor(vec2f_t floorWall, float distWall, int wallEnd, vec2f_t pos, int x) {
+	void RenderFloor(const texture_t& tex, vec2f_t floorWall, float distWall, int wallEnd, vec2f_t pos, int x) {
 		for (int y = wallEnd + 1; y < WIN_HEIGHT; ++y)
 		{
 			float currentDist = WIN_HEIGHT / (2.0f * y - WIN_HEIGHT);
@@ -276,7 +287,7 @@ namespace sj {
 			float currentFloorX = weight * floorWall.x + (1.0f - weight) * pos.x;
 			float currentFloorY = weight * floorWall.y + (1.0f - weight) * pos.y;
 
-			const uint8_t* txsmp = brick.Sample(
+			const uint8_t* txsmp = tex.Sample(
 				currentFloorX - floor(currentFloorX), 
 				currentFloorY - floor(currentFloorY)
 			);
@@ -308,7 +319,7 @@ namespace sj {
 			hit_t hit = CastRay(pos, rayDir, x);
 			wall_t wall = RenderWalls(x, hit, pos, rayDir);
 			vec2f_t floorWall = FloorCast(hit, rayDir, wall);
-			RenderFloor(floorWall, hit.dist, wall.end, pos, x);
+			RenderFloor(g_mainAtlas[16], floorWall, hit.dist, wall.end, pos, x);
 		}
 		DrawBuffer(g_mainBuffer);
 	}
