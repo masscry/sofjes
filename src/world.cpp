@@ -1,6 +1,7 @@
 #include <cmath>
 #include <vector>
 #include <cstdio>
+#include <cassert>
 
 #include <world.h>
 #include <targa.h>
@@ -237,6 +238,7 @@ namespace sj {
 		}
 
 		float wallX;
+		float wallTexX;
 
 		if (hit.side == 0) {
 			wallX = pos.y + hit.dist * rayDir.y;
@@ -246,11 +248,20 @@ namespace sj {
 		}
 		wallX -= floor(wallX);
 
+		if ((hit.side == 0 && rayDir.x > 0.0f) || (hit.side == 1 && rayDir.y < 0.0f)) {
+			wallTexX = 1.0f - wallX;
+		}
+		else {
+			wallTexX = wallX;
+		}
+
+		assert(wallTexX <= 1.0f);
+
 		if (hit.dist <= 1.0f) {
 			hit.dist = 1.0f;
 		}
 
-		SampleWall(g_mainAtlas[Cell(hit.map.x,hit.map.y)], wallX, texLine, lineHeight, drawEnd-drawStart+1, hit.dist);
+		SampleWall(g_mainAtlas[Cell(hit.map.x,hit.map.y)], wallTexX, texLine, lineHeight, drawEnd-drawStart+1, hit.dist);
 
 		for (int y = drawStart; y <= drawEnd; ++y) {
 			sj::PutPixel(y, x * 4, texLine[y - drawStart]);
@@ -277,11 +288,8 @@ namespace sj {
 		return vec2f_t{ hit.map.x + wall.x, hit.map.y + 1.0f };
 	}
 
-	void RenderFloor(const texture_t& tex, vec2f_t floorWall, float distWall, int wallEnd, vec2f_t pos, int x) {
-		for (int y = wallEnd + 1; y < WIN_HEIGHT; ++y)
-		{
-			float currentDist = WIN_HEIGHT / (2.0f * y - WIN_HEIGHT);
-
+	void PutSideLine(const texture_t& tex, float currentDist, float distWall, vec2f_t floorWall, vec2f_t pos, int x, int y)
+	{
 			float weight = currentDist / distWall;
 
 			float currentFloorX = weight * floorWall.x + (1.0f - weight) * pos.x;
@@ -302,6 +310,21 @@ namespace sj {
 			PutPixel(y, x * 4 + 1, col);
 			PutPixel(y, x * 4 + 2, col);
 			PutPixel(y, x * 4 + 3, col);
+	}
+
+	void RenderFloor(const texture_t& tex, vec2f_t floorWall, float distWall, int wallEnd, vec2f_t pos, int x) {
+		for (int y = wallEnd + 1; y < WIN_HEIGHT; ++y)
+		{
+			float currentDist = WIN_HEIGHT / (2.0f * y - WIN_HEIGHT);
+			PutSideLine(tex, currentDist, distWall, floorWall, pos, x, y);
+		}
+	}
+
+	void RenderCelling(const texture_t& tex, vec2f_t ceilWall, float distWall, int wallStart, vec2f_t pos, int x) {
+		for (int y = 0; y < wallStart; ++y)
+		{
+			float currentDist = WIN_HEIGHT / (WIN_HEIGHT - 2.0f * y);
+			PutSideLine(tex, currentDist, distWall, ceilWall, pos, x, y);
 		}
 	}
 
@@ -320,6 +343,7 @@ namespace sj {
 			wall_t wall = RenderWalls(x, hit, pos, rayDir);
 			vec2f_t floorWall = FloorCast(hit, rayDir, wall);
 			RenderFloor(g_mainAtlas[16], floorWall, hit.dist, wall.end, pos, x);
+			RenderCelling(g_mainAtlas[17], floorWall, hit.dist, wall.start, pos, x);
 		}
 		DrawBuffer(g_mainBuffer);
 	}

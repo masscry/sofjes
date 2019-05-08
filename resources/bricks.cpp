@@ -1,4 +1,5 @@
 #include <world.h>
+#include <texture_t.h>
 
 namespace {
 

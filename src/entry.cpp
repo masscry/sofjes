@@ -9,6 +9,7 @@ int loop = 1;
 
 sj::vec2f_t pos = { 22.0f, 11.5f };
 sj::vec2f_t dir = { -1.0f,  0.0f };
+sj::vec2f_t perdir = { 0.0f, 1.0f  };
 sj::vec2f_t plane = { 0.0f, 0.66f };
 
 std::unordered_map<SDL_Keycode, bool> KEYS;
@@ -40,23 +41,26 @@ int main(int argc, char* argv[]) {
 
 			float frameTime = sj::FrameTime();
 
-			float rotate = (float)(KEYS[SDLK_LEFT] - KEYS[SDLK_RIGHT]);
-			float walk = (float)(KEYS[SDLK_UP] - KEYS[SDLK_DOWN]);
+			float rotate = (float)(KEYS[SDLK_q] - KEYS[SDLK_e]);
+			float walk = (float)(KEYS[SDLK_w] - KEYS[SDLK_s]);
+			float stride = (float)(KEYS[SDLK_d] - KEYS[SDLK_a]);
 
-			if (sj::Cell(int(pos.x + walk * dir.x * frameTime), int(pos.y)) == 0)
+			if (sj::Cell(int(pos.x + (walk * dir.x + stride * perdir.x) * frameTime), int(pos.y)) == 0)
 			{
-				pos.x += walk * dir.x * frameTime;
+				pos.x += (walk * dir.x + stride * perdir.x) * frameTime;
 			}
-
-			if (sj::Cell(int(pos.x), int(pos.y + walk * dir.y * frameTime)) == 0)
+			if (sj::Cell(int(pos.x), int(pos.y + (walk * dir.y + stride * perdir.y) * frameTime)) == 0)
 			{
-				pos.y += walk * dir.y * frameTime;
+				pos.y += (walk * dir.y + stride * perdir.y) * frameTime;
 			}
 
 			float oldDirX = dir.x;
 
 			dir.x = dir.x * cos(rotate * frameTime) - dir.y * sin(rotate * frameTime);
 			dir.y = oldDirX * sin(rotate * frameTime) + dir.y * cos(rotate * frameTime);
+
+			perdir.x = dir.y;
+			perdir.y = -dir.x;
 
 			float oldPlaneX = plane.x;
 
