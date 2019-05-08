@@ -50,8 +50,7 @@ namespace sj {
     int32_t  len;
     std::vector<uint8_t> pixels;
     uint8_t* bgra;
-    uint32_t index;
-
+    
     if (fseek(input, 0, SEEK_END) != 0) {
       throw std::runtime_error("fseek failed");
     }
@@ -111,7 +110,7 @@ namespace sj {
 
     bgra = pixels.data();
 
-    for (index = 0; index < head.is.width*head.is.height; ++index) {
+    for (uint16_t index = 0; index < head.is.width*head.is.height; ++index) {
       uint8_t temp = bgra[index * 4];
       bgra[index * 4] = bgra[index * 4 + 2];
       bgra[index * 4 + 2] = temp;

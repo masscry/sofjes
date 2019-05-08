@@ -207,9 +207,9 @@ namespace sj {
 			const uint8_t* smpx = tex.Sample(u, v);
 
 			pTexels[i] = RGBtoINT(
-				(smpx[0])/dist,
-				(smpx[1])/dist,
-				(smpx[2])/dist
+				(uint8_t)((smpx[0])/dist),
+				(uint8_t)((smpx[1])/dist),
+				(uint8_t)((smpx[2])/dist)
 			);
 		}
 	}

@@ -21,6 +21,10 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   add_compile_options (-fcolor-diagnostics)
 endif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 
+if (WIN32)
+  add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif(WIN32)
+
 find_package(SDL2 REQUIRED)
 
 add_executable(sofjes

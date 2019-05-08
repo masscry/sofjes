@@ -67,7 +67,7 @@ namespace sj {
     std::vector<texture_t> result;
     result.reserve(tiles.x*tiles.y);
 
-    vec2i_t spSize;
+    vec2ui_t spSize;
 
     spSize.x = (this->width-stride.x*(tiles.x-1))/tiles.x;
     spSize.y = (this->height-stride.y*(tiles.y-1))/tiles.y;

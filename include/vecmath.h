@@ -2,6 +2,8 @@
 #ifndef __SOFJES_VECMATH_HEADER__
 #define __SOFJES_VECMATH_HEADER__
 
+#include <cstdint>
+
 namespace sj {
 
   template<typename T>
@@ -12,6 +14,7 @@ namespace sj {
 
   typedef vec2_t<float> vec2f_t;
   typedef vec2_t<int> vec2i_t;
+  typedef vec2_t<uint32_t> vec2ui_t;
 
 }
 
