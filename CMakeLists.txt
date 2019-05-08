@@ -15,6 +15,12 @@ endif(LTO_SUPPORT)
 set(CXX_STANDARD 11)
 set(CXX_STANDARD_REQUIRED TRUE)
 
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+  add_compile_options (-fdiagnostics-color=always)
+elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+  add_compile_options (-fcolor-diagnostics)
+endif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+
 find_package(SDL2 REQUIRED)
 
 add_executable(sofjes
