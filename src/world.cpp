@@ -201,7 +201,7 @@ namespace sj {
 	void SampleWall(const texture_t & tex, float xCoord, uint32_t* pTexels, float lineHeight, int totalTexels, float dist) {
 		float step = 1.0f/lineHeight;
 		float toffset = (lineHeight - totalTexels)/2.0f;
-		for (int i = 0; i < totalTexels; ++i) {
+		for (int i = 0; i < totalTexels; i+=2) {
 			float u = xCoord;
 			float v = step*(i+toffset);
 			const uint8_t* smpx = tex.Sample(u, v);
@@ -211,6 +211,7 @@ namespace sj {
 				(uint8_t)((smpx[1])/dist),
 				(uint8_t)((smpx[2])/dist)
 			);
+			pTexels[i + 1] = pTexels[i];
 		}
 	}
 
