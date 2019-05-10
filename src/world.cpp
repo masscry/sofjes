@@ -2,6 +2,8 @@
 #include <vector>
 #include <cstdio>
 #include <cassert>
+#include <set>
+#include <algorithm>
 
 #include <world.h>
 #include <targa.h>
@@ -10,30 +12,16 @@ namespace
 {
 	int map[sj::MAP_WIDTH][sj::MAP_HEIGHT] =
 	{
-	  {416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416},
-	  {416,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,416,0,0,0,0,0,0,416},
-	  {416,0,416,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,416},
-	  {416,0,416,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,416},
-	  {416,0,416,0,0,0,0,0,0,0,0,0,0,0,0,0,416,0,0,0,0,0,0,416},
-	  {416,0,416,0,0,0,0,416,416,416,416,416,416,416,416,416,416,416,0,416,416,416,416,416},
-	  {416,0,416,0,0,0,0,416,0,416,0,416,0,416,0,416,416,0,0,0,416,416,416,416},
-	  {416,0,416,0,0,0,0,416,0,0,0,0,0,0,0,416,416,0,0,0,0,0,0,416},
-	  {416,0,416,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,416,416,416,416},
-	  {416,0,416,0,0,0,0,416,0,0,0,0,0,0,0,416,416,0,0,0,0,0,0,416},
-	  {416,0,0,0,0,0,0,416,0,0,0,0,0,0,0,416,416,0,0,0,416,416,416,416},
-	  {416,0,0,0,0,0,0,416,416,416,416,0,416,416,416,416,416,416,416,416,416,416,416,416},
-	  {416,416,416,416,416,416,416,416,416,416,416,0,416,416,416,416,416,416,416,416,416,416,416,416},
-	  {8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,416},
-	  {416,416,416,416,416,416,0,416,416,416,416,0,416,416,416,416,416,416,416,416,416,416,416,416},
-	  {416,416,416,416,416,416,0,416,416,416,416,0,416,416,416,416,416,416,416,416,416,416,416,416},
-	  {416,0,0,0,0,0,0,0,0,416,416,0,416,416,0,0,0,0,0,416,0,0,0,416},
-	  {416,0,0,0,0,0,0,0,0,0,0,0,416,416,0,0,416,0,0,416,0,0,0,416},
-	  {416,0,0,0,0,0,0,0,0,416,416,0,416,416,0,0,0,0,0,416,416,0,416,416},
-	  {416,0,416,0,416,0,0,0,0,416,416,0,0,0,0,0,416,0,0,0,0,0,0,416},
-	  {416,0,0,416,0,0,0,0,0,416,416,0,416,416,0,0,0,0,0,416,416,0,416,416},
-	  {416,0,416,0,416,0,0,0,0,416,416,0,416,416,0,0,416,0,0,416,0,0,0,416},
-	  {416,0,0,0,0,0,0,0,0,416,416,0,416,416,0,0,0,0,0,416,0,0,0,416},
-	  {416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416,416}
+		{416, 416, 416, 416, 416, 416, 416, 416, 416, 416},
+		{416,   0,   0,   0,  19,   0,   0,   0,   0, 416},
+		{416,  19,  19,   0,  19,   0,  19,   0,   0, 416},
+		{416,   0,   0,   0,   0,   0,   0,   0,   0, 416},
+		{416,  19,  19,   0,   0,   0,  19,   0,   0, 416},
+		{416,   0,   0,   0,   0,   0,   0,   0,   0, 416},
+		{416,  19,  19,   0,  19,   0,  19,   0,   0, 416},
+		{416,   0,   0,   0,  19,   0,   0,   0,   0, 416},
+		{416,   0,   0,   0,   0,   0,   0,   0,   0, 416},
+		{416, 416, 416, 416, 416, 416, 416, 416, 416, 416}
 	};
 
 	SDL_Window* g_mainWin = nullptr;
@@ -72,8 +60,11 @@ namespace sj {
 		g_mainAtlas = g_mainTexture.GenerateAtlas(vec2i_t{32, 32}, vec2i_t{1, 1});
 	}
 
+	void DrawBuffer(Uint32 * buffer);
+
 	void UpdateWindow(float frameTime) {
 		char text[256];
+		DrawBuffer(g_mainBuffer);
 		SDL_UpdateWindowSurface(g_mainWin);
 		snprintf(text, 256, "FPS: %3.1f", 1.0f / frameTime);
 		SDL_SetWindowTitle(g_mainWin, text);
@@ -256,8 +247,6 @@ namespace sj {
 			wallTexX = wallX;
 		}
 
-		assert(wallTexX <= 1.0f);
-
 		if (hit.dist <= 1.0f) {
 			hit.dist = 1.0f;
 		}
@@ -329,25 +318,114 @@ namespace sj {
 		}
 	}
 
-	void Render(vec2f_t pos, vec2f_t dir, vec2f_t plane) {
+	void Render(vec2f_t pos, vec2f_t dir, vec2f_t plane, std::vector<float>* wallDist) {
 		float camPart = 2.0f / sj::WIN_WIDTH;
-
-		for (uint32_t i = 0; i < WIN_HEIGHT*WIN_WIDTH; ++i) {
-			g_mainBuffer[i] = RGBtoINT(0, 255, 0);
-		}
 
 		for (int x = 0; x < sj::WIN_WIDTH / 4; ++x) {
 			float camX = camPart * x * 4.0f - 1;
 			vec2f_t rayDir = { dir.x + plane.x * camX, dir.y + plane.y * camX };
 
 			hit_t hit = CastRay(pos, rayDir, x);
+			(*wallDist)[x] = hit.dist;
 			wall_t wall = RenderWalls(x, hit, pos, rayDir);
 			vec2f_t floorWall = FloorCast(hit, rayDir, wall);
 			RenderFloor(g_mainAtlas[16], floorWall, hit.dist, wall.end, pos, x);
 			RenderCelling(g_mainAtlas[17], floorWall, hit.dist, wall.start, pos, x);
 		}
-		DrawBuffer(g_mainBuffer);
 	}
 
+	class CompareSpriteDistance {
+		vec2f_t pos;
+	public:
+
+		bool operator()(const sprite_t* a, const sprite_t* b) {
+			return SqrDistance(a->pos, this->pos) > SqrDistance(b->pos, this->pos);
+		}
+
+		CompareSpriteDistance(vec2f_t pos):pos(pos) {
+			;
+		}
+
+	};
+
+
+	void RenderSprites(const std::vector<float>& wallDist, vec2f_t pos, vec2f_t dir, vec2f_t plane, const sprite_t* sprites, uint32_t spritesTotal) {
+		CompareSpriteDistance compDist(pos);
+		std::vector<const sprite_t*> sortedSprites;
+
+		sortedSprites.reserve(spritesTotal);
+		for (uint32_t i = 0; i < spritesTotal; ++i) {
+			sortedSprites.push_back(sprites+i);
+		}
+		std::sort(sortedSprites.begin(), sortedSprites.end(), compDist);
+
+		for (std::vector<const sprite_t*>::iterator i = sortedSprites.begin(), e = sortedSprites.end(); i!=e; ++i)
+		{
+			sprite_t tmp = *(*i);
+			tmp.pos.x -= pos.x;
+			tmp.pos.y -= pos.y;
+
+			float invDet = 1.0f / (plane.x*dir.y - dir.x*plane.y);
+
+			vec2f_t transform{
+				invDet * (dir.y * tmp.pos.x - dir.x * tmp.pos.y),
+				invDet * (-plane.y * tmp.pos.x + plane.x * tmp.pos.y)
+			};
+
+			int sprScreenX = int((WIN_WIDTH / 2.0f) * (1.0f + transform.x / transform.y));
+
+			int sprHeight = std::abs(int(WIN_HEIGHT / (transform.y)));
+			
+			int drawStartY = -sprHeight / 2 + WIN_HEIGHT / 2;
+			int drawOffsetY = 0;
+			if(drawStartY < 0)
+			{
+				drawOffsetY = -drawStartY;
+				drawStartY = 0;
+			}
+
+			int drawEndY = sprHeight / 2 + WIN_HEIGHT / 2;
+			if(drawEndY >= (int)WIN_HEIGHT)
+			{
+				drawEndY = WIN_HEIGHT - 1;
+			}
+
+			int sprWidth = std::abs(int(WIN_HEIGHT / (transform.y)));
+			int drawStartX = -sprWidth / 2 + sprScreenX;
+			int drawOffsetX = 0;
+			if(drawStartX < 0)
+			{
+				drawOffsetX = -drawStartX;
+				drawStartX = 0;
+			}
+			
+			int drawEndX = sprWidth / 2 + sprScreenX;
+			if(drawEndX >= (int)WIN_WIDTH)
+			{
+				drawEndX = WIN_WIDTH - 1;
+			}
+
+			float txStep = 1.0f/sprWidth;
+			float tyStep = 1.0f/sprHeight;
+
+			for(int stripe = drawStartX; stripe < drawEndX; stripe+=4)
+			{
+				if(transform.y > 0.0f && stripe > 0 && stripe < WIN_WIDTH && transform.y < wallDist[stripe/4])
+				{
+					for(int y = drawStartY; y < drawEndY; ++y)
+					{
+						const uint8_t* smp = g_mainAtlas[30].Sample(txStep*(stripe-drawStartX+drawOffsetX), tyStep*(y-drawStartY+drawOffsetY));
+						if (smp[3] != 0) {
+							uint32_t color = RGBtoINT(smp[0]/transform.y, smp[1]/transform.y, smp[2]/transform.y);
+							PutPixel(y, stripe, color);
+							PutPixel(y, stripe+1, color);
+							PutPixel(y, stripe+2, color);
+							PutPixel(y, stripe+3, color);
+						}
+					}
+				}
+			}
+		}
+	}
 
 }

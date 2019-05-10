@@ -4,21 +4,30 @@
 #include <world.h>
 #include <stdexcept>
 #include <iostream>
+#include <vector>
 
 int loop = 1;
 
-sj::vec2f_t pos = { 22.0f, 11.5f };
+sj::vec2f_t pos = { 8.5f, 8.5f };
 sj::vec2f_t dir = { -1.0f,  0.0f };
 sj::vec2f_t perdir = { 0.0f, 1.0f  };
 sj::vec2f_t plane = { 0.0f, 0.66f };
 
 std::unordered_map<SDL_Keycode, bool> KEYS;
 
+const uint32_t spritesTotal = 1;
+
+sj::sprite_t sprites[spritesTotal] = {
+	{5.5, 5.5, 10},
+};
+
 int main(int argc, char* argv[]) {
 
 	try {
 
 		sj::CreateWindow();
+		std::vector<float> wallDist;
+		wallDist.resize(sj::WIN_WIDTH/4);
 
 		while (loop != 0) {
 			SDL_Event evt;
@@ -67,7 +76,8 @@ int main(int argc, char* argv[]) {
 			plane.x = plane.x * std::cos(rotate * frameTime) - plane.y * std::sin(rotate * frameTime);
 			plane.y = oldPlaneX * std::sin(rotate * frameTime) + plane.y * std::cos(rotate * frameTime);
 
-			sj::Render(pos, dir, plane);
+			sj::Render(pos, dir, plane, &wallDist);
+			sj::RenderSprites(wallDist, pos, dir, plane, sprites, spritesTotal);
 			sj::UpdateWindow(frameTime);
 		}
 	}
