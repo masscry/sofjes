@@ -374,9 +374,9 @@ namespace sj {
 
 			int sprScreenX = int((WIN_WIDTH / 2.0f) * (1.0f + transform.x / transform.y));
 
-			int sprHeight = std::abs(int(WIN_HEIGHT / (transform.y)));
+			int sprHeight = std::abs(int(WIN_HEIGHT/1.5f / (transform.y)));
 			
-			int drawStartY = -sprHeight / 2 + WIN_HEIGHT / 2;
+			int drawStartY = -sprHeight / 2 + WIN_HEIGHT / 2 + 100.0f/transform.y;
 			int drawOffsetY = 0;
 			if(drawStartY < 0)
 			{
@@ -384,13 +384,13 @@ namespace sj {
 				drawStartY = 0;
 			}
 
-			int drawEndY = sprHeight / 2 + WIN_HEIGHT / 2;
+			int drawEndY = sprHeight / 2 + WIN_HEIGHT / 2 + 100.0f/transform.y;
 			if(drawEndY >= (int)WIN_HEIGHT)
 			{
 				drawEndY = WIN_HEIGHT - 1;
 			}
 
-			int sprWidth = std::abs(int(WIN_HEIGHT / (transform.y)));
+			int sprWidth = std::abs(int(WIN_HEIGHT/2.0f / (transform.y)));
 			int drawStartX = -sprWidth / 2 + sprScreenX;
 			int drawOffsetX = 0;
 			if(drawStartX < 0)
@@ -408,6 +408,8 @@ namespace sj {
 			float txStep = 1.0f/sprWidth;
 			float tyStep = 1.0f/sprHeight;
 
+			float cdist = (transform.y<1.0f)?1.0f:transform.y;
+
 			for(int stripe = drawStartX; stripe < drawEndX; stripe+=4)
 			{
 				if(transform.y > 0.0f && stripe > 0 && stripe < WIN_WIDTH && transform.y < wallDist[stripe/4])
@@ -416,7 +418,11 @@ namespace sj {
 					{
 						const uint8_t* smp = g_mainAtlas[30].Sample(txStep*(stripe-drawStartX+drawOffsetX), tyStep*(y-drawStartY+drawOffsetY));
 						if (smp[3] != 0) {
-							uint32_t color = RGBtoINT(smp[0]/transform.y, smp[1]/transform.y, smp[2]/transform.y);
+							uint32_t color = RGBtoINT(
+								smp[0]/cdist,
+								smp[1]/cdist,
+								smp[2]/cdist
+							);
 							PutPixel(y, stripe, color);
 							PutPixel(y, stripe+1, color);
 							PutPixel(y, stripe+2, color);
