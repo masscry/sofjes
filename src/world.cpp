@@ -75,11 +75,11 @@ namespace sj {
 		SDL_Quit();
 	}
 
-	inline uint32_t RGBtoINT(uint8_t r, uint8_t g, uint8_t b) {
-		return ((uint32_t)b) | (((uint32_t)g) << 8) | (((uint32_t)r) << 16);
+	inline uint32_t RGBtoINT(uint32_t r, uint32_t g, uint32_t b) {
+		return (b) | (g << 8) | (r << 16);
 	}
 
-	inline void PutPixel(int y, int x, Uint8 r, Uint8 g, Uint8 b)
+	inline void PutPixel(int y, int x, uint32_t r, uint32_t g, uint32_t b)
 	{
 		g_mainBuffer[y * WIN_WIDTH + x] = RGBtoINT(r, g, b);
 	}
@@ -87,6 +87,19 @@ namespace sj {
 	inline void PutPixel(int y, int x, uint32_t col)
 	{
 		g_mainBuffer[y * WIN_WIDTH + x] = col;
+	}
+
+	template<int pixcnt>
+	inline void PutPixelRow(int y, int x, uint32_t col)
+	{
+		g_mainBuffer[y * WIN_WIDTH + x] = col;
+		PutPixelRow<pixcnt - 1>(y, x + 1, col);
+	}
+
+	template<>
+	inline void PutPixelRow<0>(int y, int x, uint32_t col)
+	{
+		;
 	}
 
 	void DrawBuffer(Uint32 * buffer)
@@ -101,7 +114,7 @@ namespace sj {
 				*bufp = *buffer++;
 				bufp++;
 			}
-			bufp += g_mainSurface->pitch / 4;
+			bufp += g_mainSurface->pitch / sizeof(uint32_t);
 			bufp -= WIN_WIDTH;
 		}
 	}
@@ -189,7 +202,7 @@ namespace sj {
 		}
 	}
 
-	void SampleWall(const texture_t & tex, float xCoord, uint32_t* pTexels, float lineHeight, int totalTexels, float dist) {
+	static void SampleWall(const texture_t & tex, float xCoord, uint32_t* pTexels, float lineHeight, int totalTexels, float invDist) {
 		float step = 1.0f/lineHeight;
 		float toffset = (lineHeight - totalTexels)/2.0f;
 		for (int i = 0; i < totalTexels; i+=2) {
@@ -198,9 +211,9 @@ namespace sj {
 			const uint8_t* smpx = tex.Sample(u, v);
 
 			pTexels[i] = RGBtoINT(
-				(uint8_t)((smpx[0])/dist),
-				(uint8_t)((smpx[1])/dist),
-				(uint8_t)((smpx[2])/dist)
+				(uint32_t)(smpx[0] * invDist),
+				(uint32_t)(smpx[1] * invDist),
+				(uint32_t)(smpx[2] * invDist)
 			);
 			pTexels[i + 1] = pTexels[i];
 		}
@@ -251,13 +264,11 @@ namespace sj {
 			hit.dist = 1.0f;
 		}
 
-		SampleWall(g_mainAtlas[Cell(hit.map.x,hit.map.y)], wallTexX, texLine, lineHeight, drawEnd-drawStart+1, hit.dist);
+		SampleWall(g_mainAtlas[Cell(hit.map.x,hit.map.y)], wallTexX, texLine, lineHeight, drawEnd-drawStart+1, 1.0f/hit.dist);
 
-		for (int y = drawStart; y <= drawEnd; ++y) {
-			sj::PutPixel(y, x * 4, texLine[y - drawStart]);
-			sj::PutPixel(y, x * 4 + 1, texLine[y - drawStart]);
-			sj::PutPixel(y, x * 4 + 2, texLine[y - drawStart]);
-			sj::PutPixel(y, x * 4 + 3, texLine[y - drawStart]);
+		for (int y = drawStart; y <= drawEnd; ++y) 
+		{
+			sj::PutPixelRow<4>(y, x * 4, texLine[y - drawStart]);
 		}
 		return wall_t{ wallX, drawStart, drawEnd };
 	}
@@ -278,43 +289,49 @@ namespace sj {
 		return vec2f_t{ hit.map.x + wall.x, hit.map.y + 1.0f };
 	}
 
-	void PutSideLine(const texture_t& tex, float currentDist, float distWall, vec2f_t floorWall, vec2f_t pos, int x, int y)
+	inline uint32_t PutSideLine(const texture_t& tex, float invCurrentDist, float distWall, vec2f_t floorWall, vec2f_t pos, int x, int y)
 	{
-			float weight = currentDist / distWall;
+			float weight = 1.0f / (invCurrentDist * distWall);
 
 			float currentFloorX = weight * floorWall.x + (1.0f - weight) * pos.x;
 			float currentFloorY = weight * floorWall.y + (1.0f - weight) * pos.y;
 
-			const uint8_t* txsmp = tex.Sample(
-				currentFloorX - floor(currentFloorX), 
-				currentFloorY - floor(currentFloorY)
-			);
+			currentFloorX -= (int)(currentFloorX);
+			currentFloorY -= (int)(currentFloorY);
 
+			const uint8_t* txsmp = tex.Sample(currentFloorX, currentFloorY);
+			
 			uint32_t col = RGBtoINT(
-				(uint8_t)(txsmp[0] / currentDist),
-				(uint8_t)(txsmp[1] / currentDist),
-				(uint8_t)(txsmp[2] / currentDist)
+				(uint32_t)(txsmp[0] * invCurrentDist),
+				(uint32_t)(txsmp[1] * invCurrentDist),
+				(uint32_t)(txsmp[2] * invCurrentDist)
 			);
 
-			PutPixel(y, x * 4, col);
-			PutPixel(y, x * 4 + 1, col);
-			PutPixel(y, x * 4 + 2, col);
-			PutPixel(y, x * 4 + 3, col);
+			PutPixelRow<4>(y, x * 4, col);
+			return col;
 	}
 
 	void RenderFloor(const texture_t& tex, vec2f_t floorWall, float distWall, int wallEnd, vec2f_t pos, int x) {
-		for (int y = wallEnd + 1; y < WIN_HEIGHT; ++y)
+		for (int y = wallEnd + 1; y < WIN_HEIGHT; y+=2)
 		{
-			float currentDist = WIN_HEIGHT / (2.0f * y - WIN_HEIGHT);
-			PutSideLine(tex, currentDist, distWall, floorWall, pos, x, y);
+			float currentDist = (2.0f * y - WIN_HEIGHT) / WIN_HEIGHT;
+			uint32_t cache = PutSideLine(tex, currentDist, distWall, floorWall, pos, x, y);
+			if (y + 1 < WIN_HEIGHT)
+			{
+				PutPixelRow<4>(y + 1, x * 4, cache);
+			}
 		}
 	}
 
 	void RenderCelling(const texture_t& tex, vec2f_t ceilWall, float distWall, int wallStart, vec2f_t pos, int x) {
-		for (int y = 0; y < wallStart; ++y)
+		for (int y = 0; y < wallStart; y+=2)
 		{
-			float currentDist = WIN_HEIGHT / (WIN_HEIGHT - 2.0f * y);
-			PutSideLine(tex, currentDist, distWall, ceilWall, pos, x, y);
+			float currentDist = (WIN_HEIGHT - 2.0f * y) / WIN_HEIGHT;
+			uint32_t cache = PutSideLine(tex, currentDist, distWall, ceilWall, pos, x, y);
+			if (y + 1 < wallStart)
+			{
+				PutPixelRow<4>(y + 1, x * 4, cache);
+			}
 		}
 	}
 
@@ -376,7 +393,7 @@ namespace sj {
 
 			int sprHeight = std::abs(int(WIN_HEIGHT/1.5f / (transform.y)));
 			
-			int drawStartY = -sprHeight / 2 + WIN_HEIGHT / 2 + 100.0f/transform.y;
+			int drawStartY = (int)(-sprHeight / 2 + WIN_HEIGHT / 2 + 100.0f/transform.y);
 			int drawOffsetY = 0;
 			if(drawStartY < 0)
 			{
@@ -384,7 +401,7 @@ namespace sj {
 				drawStartY = 0;
 			}
 
-			int drawEndY = sprHeight / 2 + WIN_HEIGHT / 2 + 100.0f/transform.y;
+			int drawEndY = (int)(sprHeight / 2 + WIN_HEIGHT / 2 + 100.0f/transform.y);
 			if(drawEndY >= (int)WIN_HEIGHT)
 			{
 				drawEndY = WIN_HEIGHT - 1;
@@ -408,7 +425,7 @@ namespace sj {
 			float txStep = 1.0f/sprWidth;
 			float tyStep = 1.0f/sprHeight;
 
-			float cdist = (transform.y<1.0f)?1.0f:transform.y;
+			float invCurrentDist = (transform.y<1.0f)?1.0f:(1.0f/transform.y);
 
 			for(int stripe = drawStartX; stripe < drawEndX; stripe+=4)
 			{
@@ -419,14 +436,11 @@ namespace sj {
 						const uint8_t* smp = g_mainAtlas[30].Sample(txStep*(stripe-drawStartX+drawOffsetX), tyStep*(y-drawStartY+drawOffsetY));
 						if (smp[3] != 0) {
 							uint32_t color = RGBtoINT(
-								smp[0]/cdist,
-								smp[1]/cdist,
-								smp[2]/cdist
+								(uint32_t)(smp[0] * invCurrentDist),
+								(uint32_t)(smp[1] * invCurrentDist),
+								(uint32_t)(smp[2] * invCurrentDist)
 							);
-							PutPixel(y, stripe, color);
-							PutPixel(y, stripe+1, color);
-							PutPixel(y, stripe+2, color);
-							PutPixel(y, stripe+3, color);
+							PutPixelRow<4>(y, stripe, color);
 						}
 					}
 				}

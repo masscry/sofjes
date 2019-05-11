@@ -110,7 +110,7 @@ namespace sj {
 
     bgra = pixels.data();
 
-    for (uint32_t index = 0; index < head.is.width*head.is.height; ++index) {
+    for (int index = 0; index < head.is.width*head.is.height; ++index) {
       uint8_t temp = bgra[index * 4];
       bgra[index * 4] = bgra[index * 4 + 2];
       bgra[index * 4 + 2] = temp;

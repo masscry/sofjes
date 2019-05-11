@@ -64,9 +64,7 @@ namespace sj {
 		v = (v > 1.0f)?1.0f:v;
 		u = (u < 0.0f)?0.0f:u;
 		v = (v < 0.0f)?0.0f:v;
-		u = std::floor(u*this->width);
-		v = std::floor(v*this->height);
-		return pixel.data()+(((int)v)*this->width + ((int)u))*this->bpp;
+		return pixel.data()+(((int)(v * this->height))*this->width + ((int)(u * this->width)))*this->bpp;
 	}
 
 }
