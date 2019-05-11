@@ -13,4 +13,11 @@ Can render solid walls, floors and ceilings + one direction sprites.
  * Q - rotate left
  * E - rotate right
 
+## To start
+
+Execute "run.bat" on Windows, or "run.sh" on Linux-based OS.
+
+## Requirements
+
+Linux: SDL 2.0.8
 
