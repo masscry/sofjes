@@ -32,9 +32,9 @@ namespace sj {
 
 	float FrameTime();
 
-	void Render(vec2f_t pos, vec2f_t dir, vec2f_t plane, std::vector<float>* wallDist);
+	void Render(vec2f_t pos, matf_t view, std::vector<float>* wallDist);
 
-	void RenderSprites(const std::vector<float>& wallDist, vec2f_t pos, vec2f_t dir, vec2f_t plane, const sprite_t* sprites, uint32_t spritesTotal);
+	void RenderSprites(const std::vector<float>& wallDist, vec2f_t pos, matf_t view, const sprite_t* sprites, uint32_t spritesTotal);
 
 }
 

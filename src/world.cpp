@@ -335,12 +335,15 @@ namespace sj {
 		}
 	}
 
-	void Render(vec2f_t pos, vec2f_t dir, vec2f_t plane, std::vector<float>* wallDist) {
+	void Render(vec2f_t pos, matf_t view, std::vector<float>* wallDist) {
 		float camPart = 2.0f / sj::WIN_WIDTH;
 
 		for (int x = 0; x < sj::WIN_WIDTH / 4; ++x) {
 			float camX = camPart * x * 4.0f - 1;
-			vec2f_t rayDir = { dir.x + plane.x * camX, dir.y + plane.y * camX };
+			vec2f_t rayDir = {
+				view.t[0].x + view.t[1].x * camX,
+				view.t[0].y + view.t[1].y * camX 
+			};
 
 			hit_t hit = CastRay(pos, rayDir, x);
 			(*wallDist)[x] = hit.dist;
@@ -366,7 +369,7 @@ namespace sj {
 	};
 
 
-	void RenderSprites(const std::vector<float>& wallDist, vec2f_t pos, vec2f_t dir, vec2f_t plane, const sprite_t* sprites, uint32_t spritesTotal) {
+	void RenderSprites(const std::vector<float>& wallDist, vec2f_t pos, matf_t view, const sprite_t* sprites, uint32_t spritesTotal) {
 		CompareSpriteDistance compDist(pos);
 		std::vector<const sprite_t*> sortedSprites;
 
@@ -376,19 +379,16 @@ namespace sj {
 		}
 		std::sort(sortedSprites.begin(), sortedSprites.end(), compDist);
 
+		matf_t invView = Inverse(view);
+
 		for (std::vector<const sprite_t*>::iterator i = sortedSprites.begin(), e = sortedSprites.end(); i!=e; ++i)
 		{
 			sprite_t tmp = *(*i);
 			tmp.pos.x -= pos.x;
 			tmp.pos.y -= pos.y;
 
-			float invDet = 1.0f / (plane.x*dir.y - dir.x*plane.y);
-
-			vec2f_t transform{
-				invDet * (dir.y * tmp.pos.x - dir.x * tmp.pos.y),
-				invDet * (-plane.y * tmp.pos.x + plane.x * tmp.pos.y)
-			};
-
+			vec2f_t transform = invView*tmp.pos;
+			
 			int sprScreenX = int((WIN_WIDTH / 2.0f) * (1.0f + transform.x / transform.y));
 
 			int sprHeight = std::abs(int(WIN_HEIGHT/1.5f / (transform.y)));

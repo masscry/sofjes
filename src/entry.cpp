@@ -9,9 +9,13 @@
 int loop = 1;
 
 sj::vec2f_t pos = { 8.5f, 8.5f };
-sj::vec2f_t dir = { -1.0f,  0.0f };
-sj::vec2f_t perdir = { 0.0f, 1.0f  };
-sj::vec2f_t plane = { 0.0f, 0.66f };
+
+sj::matf_t xdir{ 
+	{ 
+		{ -1.0f, 0.0f },
+		{ 0.0f, 1.0f } 
+	} 
+};
 
 std::unordered_map<SDL_Keycode, bool> KEYS;
 
@@ -50,34 +54,23 @@ int main(int argc, char* argv[]) {
 
 			float frameTime = sj::FrameTime();
 
-			float rotate = (float)(KEYS[SDLK_q] - KEYS[SDLK_e]);
+			float rotate = (float)(KEYS[SDLK_e] - KEYS[SDLK_q]);
 			float walk = (float)(KEYS[SDLK_w] - KEYS[SDLK_s]);
 			float stride = (float)(KEYS[SDLK_d] - KEYS[SDLK_a]);
 
-			if (sj::Cell(int(pos.x + (walk * dir.x + stride * perdir.x) * frameTime), int(pos.y)) == 0)
+			if (sj::Cell(int(pos.x + (walk * xdir.t[0].x + stride * xdir.t[1].x) * frameTime), int(pos.y)) == 0)
 			{
-				pos.x += (walk * dir.x + stride * perdir.x) * frameTime;
+				pos.x += (walk * xdir.t[0].x + stride * xdir.t[1].x) * frameTime;
 			}
-			if (sj::Cell(int(pos.x), int(pos.y + (walk * dir.y + stride * perdir.y) * frameTime)) == 0)
+			if (sj::Cell(int(pos.x), int(pos.y + (walk * xdir.t[0].y + stride * xdir.t[1].y) * frameTime)) == 0)
 			{
-				pos.y += (walk * dir.y + stride * perdir.y) * frameTime;
+				pos.y += (walk * xdir.t[0].y + stride * xdir.t[1].y) * frameTime;
 			}
 
-			float oldDirX = dir.x;
+			xdir = xdir * sj::RotationMatrix(rotate*frameTime);
 
-			dir.x = dir.x * cos(rotate * frameTime) - dir.y * sin(rotate * frameTime);
-			dir.y = oldDirX * sin(rotate * frameTime) + dir.y * cos(rotate * frameTime);
-
-			perdir.x = dir.y;
-			perdir.y = -dir.x;
-
-			float oldPlaneX = plane.x;
-
-			plane.x = plane.x * std::cos(rotate * frameTime) - plane.y * std::sin(rotate * frameTime);
-			plane.y = oldPlaneX * std::sin(rotate * frameTime) + plane.y * std::cos(rotate * frameTime);
-
-			sj::Render(pos, dir, plane, &wallDist);
-			sj::RenderSprites(wallDist, pos, dir, plane, sprites, spritesTotal);
+			sj::Render(pos, xdir, &wallDist);
+			sj::RenderSprites(wallDist, pos, xdir, sprites, spritesTotal);
 			sj::UpdateWindow(frameTime);
 		}
 	}
