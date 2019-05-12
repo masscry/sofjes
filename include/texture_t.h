@@ -1,3 +1,12 @@
+/**
+ * @file texture_t.h
+ * @author masscry
+ * @date 2019-05-13
+ * 
+ * Basic texture class definition.
+ * 
+ */
+
 #pragma once
 #ifndef __SOFJES_TEXTURE_T_HEADER__
 #define __SOFJES_TEXTURE_T_HEADER__
@@ -9,6 +18,9 @@
 
 namespace sj {
 
+	/**
+	 * Basic texture class.
+	 */
 	class texture_t {
 		uint32_t width;
 		uint32_t height;
@@ -16,14 +28,47 @@ namespace sj {
 		std::vector<uint8_t> pixel;
 	public:
 
+		/**
+		 * Get texture width in pixels.
+		 */
 		uint32_t Width() const;
+
+		/**
+		 * Get texture height in pixels.
+		 */
 		uint32_t Height() const;
+
+		/**
+		 * Get texture bytes per pixel.
+		 */
 		uint32_t BytesPerPixel() const;
 
+		/**
+		 * Get sampled pixel data.
+		 * 
+		 * @param u texture coordinate between 0.0 and 1.0
+		 * @param v texture coordinate between 0.0 and 1.0
+		 * @return pointer to first pixel byte
+		 */
 		const uint8_t* Sample(float u, float v) const;
 
-    const uint8_t* Sample(uint32_t tx, uint32_t ty) const;
+		/**
+		 * Get sampled pixel data.
+		 * 
+		 * @param tx x pixel coordinate
+		 * @param ty y pixel coordinate
+		 * @return pointer to first pixel byte
+		 */
+		const uint8_t* Sample(uint32_t tx, uint32_t ty) const;
 
+		/**
+		 * Store pixel data in texture
+		 * 
+		 * @param width texture width in pixels
+		 * @param height texture height in pixels
+		 * @param bpp texture bytes per pixel
+		 * @param pixel_data pixel data itself
+		 */
 		void Assign(uint32_t width, uint32_t height, uint32_t bpp, std::vector<uint8_t>&& pixel_data);
 
 		texture_t& operator = (texture_t&& move);
@@ -37,7 +82,14 @@ namespace sj {
 
 		~texture_t();
 
-    std::vector<texture_t> GenerateAtlas(vec2i_t tiles, vec2i_t stride);
+		/**
+		 * Generate texture atlas array from spritesheet.
+		 * 
+		 * @param tiles total sprite count on X and Y axes.
+		 * @param stride size of empty space between sprites on X and Y axes
+		 * @return texture atlas array of by rows top left has index 0, bottom right has index X*Y-1 
+		 */
+		std::vector<texture_t> GenerateAtlas(vec2i_t tiles, vec2i_t stride);
 
 	};
 
