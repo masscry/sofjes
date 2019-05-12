@@ -44,6 +44,14 @@ namespace sj {
     return dx*dx + dy*dy;
   }
 
+  template<typename T>
+  inline vec2_t<T> Normalize(vec2_t<T> a) {
+    T len = std::sqrt(a.x*a.x+a.y*a.y);
+    return vec2_t<T>{
+      a.x/len, a.y/len
+    };
+  }
+
   typedef vec2_t<float> vec2f_t;
   typedef vec2_t<int> vec2i_t;
   typedef vec2_t<uint32_t> vec2ui_t;

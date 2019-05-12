@@ -53,7 +53,8 @@ int main(int argc, char* argv[]) {
 			float walk = (float)(KEYS[SDL_SCANCODE_W] - KEYS[SDL_SCANCODE_S]);
 			float stride = (float)(KEYS[SDL_SCANCODE_D] - KEYS[SDL_SCANCODE_A]);
 
-			sj::vec2f_t newPos = cam.pos + (cam.view.t[0]*walk + cam.view.t[1]*stride)*frameTime;
+			sj::vec2f_t deltaPos = sj::Normalize(cam.view.t[0]*walk + cam.view.t[1]*stride);
+			sj::vec2f_t newPos = cam.pos + deltaPos*frameTime;
 
 			if (sj::Cell(int(newPos.x), int(cam.pos.y)) == 0)
 			{
@@ -68,7 +69,7 @@ int main(int argc, char* argv[]) {
 
 			sj::Render(cam, &wallDist);
 			sj::RenderSprites(wallDist, cam, sprites, spritesTotal);
-			sj::UpdateWindow(frameTime);
+			sj::UpdateWindow(frameTime, cam.pos);
 		}
 	}
 	catch(std::runtime_error& err) {

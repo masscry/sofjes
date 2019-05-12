@@ -32,7 +32,7 @@ namespace sj {
 	};
 
 	void CreateWindow();
-	void UpdateWindow(float frameTime);
+	void UpdateWindow(float frameTime, vec2f_t pos);
 	void CloseWindow();
 
 	float FrameTime();

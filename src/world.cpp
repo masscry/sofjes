@@ -74,11 +74,11 @@ namespace sj {
 
 	static void DrawBuffer(Uint32 * buffer);
 
-	void UpdateWindow(float frameTime) {
+	void UpdateWindow(float frameTime, vec2f_t pos) {
 		char text[256];
 		DrawBuffer(g_mainBuffer);
 		SDL_UpdateWindowSurface(g_mainWin);
-		snprintf(text, 256, "FPS: %3.1f", 1.0f / frameTime);
+		snprintf(text, 256, "FPS: %3.1f POS: [%4.2f;%4.2f]", 1.0f / frameTime, pos.x, pos.y);
 		SDL_SetWindowTitle(g_mainWin, text);
 	}
 
