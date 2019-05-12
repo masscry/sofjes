@@ -18,8 +18,6 @@ sj::camera_t cam = {
 	sj::vec2f_t{ 8.5f, 8.5f }
 };
 
-std::unordered_map<SDL_Keycode, bool> KEYS;
-
 const uint32_t spritesTotal = 1;
 
 sj::sprite_t sprites[spritesTotal] = {
@@ -41,31 +39,29 @@ int main(int argc, char* argv[]) {
 			{
 				switch (evt.type)
 				{
-				case SDL_KEYDOWN:
-					KEYS[evt.key.keysym.sym] = true;
-					break;
-				case SDL_KEYUP:
-					KEYS[evt.key.keysym.sym] = false;
-					break;
 				case SDL_QUIT:
 					loop = 0;
 					break;
 				}
 			}
 
+			const uint8_t* KEYS = SDL_GetKeyboardState(0);
+
 			float frameTime = sj::FrameTime();
 
-			float rotate = (float)(KEYS[SDLK_e] - KEYS[SDLK_q]);
-			float walk = (float)(KEYS[SDLK_w] - KEYS[SDLK_s]);
-			float stride = (float)(KEYS[SDLK_d] - KEYS[SDLK_a]);
+			float rotate = (float)(KEYS[SDL_SCANCODE_E] - KEYS[SDL_SCANCODE_Q]);
+			float walk = (float)(KEYS[SDL_SCANCODE_W] - KEYS[SDL_SCANCODE_S]);
+			float stride = (float)(KEYS[SDL_SCANCODE_D] - KEYS[SDL_SCANCODE_A]);
 
-			if (sj::Cell(int(cam.pos.x + (walk * cam.view.t[0].x + stride * cam.view.t[1].x) * frameTime), int(cam.pos.y)) == 0)
+			sj::vec2f_t newPos = cam.pos + (cam.view.t[0]*walk + cam.view.t[1]*stride)*frameTime;
+
+			if (sj::Cell(int(newPos.x), int(cam.pos.y)) == 0)
 			{
-				cam.pos.x += (walk * cam.view.t[0].x + stride * cam.view.t[1].x) * frameTime;
+				cam.pos.x = newPos.x;
 			}
-			if (sj::Cell(int(cam.pos.x), int(cam.pos.y + (walk * cam.view.t[0].y + stride * cam.view.t[1].y) * frameTime)) == 0)
+			if (sj::Cell(int(cam.pos.x), int(newPos.y)) == 0)
 			{
-				cam.pos.y += (walk * cam.view.t[0].y + stride * cam.view.t[1].y) * frameTime;
+				cam.pos.y = newPos.y;
 			}
 
 			cam.view = cam.view * sj::RotationMatrix(rotate*frameTime);

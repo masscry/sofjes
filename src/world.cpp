@@ -35,6 +35,18 @@ namespace
 
 namespace sj {
 
+	struct hit_t {
+		float dist;
+		int side;
+		vec2i_t map;
+	};
+
+	struct wall_t {
+		float x;
+		int start;
+		int end;
+	};
+
 	int Cell(uint32_t x, uint32_t y) {
 		if ((x < MAP_WIDTH) && (y < MAP_HEIGHT))
 		{
@@ -60,7 +72,7 @@ namespace sj {
 		g_mainAtlas = g_mainTexture.GenerateAtlas(vec2i_t{32, 32}, vec2i_t{1, 1});
 	}
 
-	void DrawBuffer(Uint32 * buffer);
+	static void DrawBuffer(Uint32 * buffer);
 
 	void UpdateWindow(float frameTime) {
 		char text[256];
@@ -75,16 +87,16 @@ namespace sj {
 		SDL_Quit();
 	}
 
-	inline uint32_t RGBtoINT(uint32_t r, uint32_t g, uint32_t b) {
+	static inline uint32_t RGBtoINT(uint32_t r, uint32_t g, uint32_t b) {
 		return (b) | (g << 8) | (r << 16);
 	}
 
-	inline void PutPixel(int y, int x, uint32_t r, uint32_t g, uint32_t b)
+	static inline void PutPixel(int y, int x, uint32_t r, uint32_t g, uint32_t b)
 	{
 		g_mainBuffer[y * WIN_WIDTH + x] = RGBtoINT(r, g, b);
 	}
 
-	inline void PutPixel(int y, int x, uint32_t col)
+	static inline void PutPixel(int y, int x, uint32_t col)
 	{
 		g_mainBuffer[y * WIN_WIDTH + x] = col;
 	}
@@ -102,7 +114,7 @@ namespace sj {
 		;
 	}
 
-	void DrawBuffer(Uint32 * buffer)
+	static void DrawBuffer(Uint32 * buffer)
 	{
 		uint32_t* bufp;
 		bufp = (uint32_t*)g_mainSurface->pixels;
@@ -128,59 +140,46 @@ namespace sj {
 		return (time - oldTime) / 1000.0f;
 	}
 
-	struct hit_t {
-		float dist;
-		int side;
-		vec2i_t map;
-	};
+	static hit_t CastRay(vec2f_t pos, vec2f_t rayDir) {
 
-	hit_t CastRay(vec2f_t pos, vec2f_t rayDir) {
-
-		vec2f_t sideDist;
 		vec2f_t deltaDist{
 			std::abs(1.0f / rayDir.x),
 			std::abs(1.0f / rayDir.y)
 		};
 
-		vec2i_t step;
-		vec2i_t map{ int(pos.x), int(pos.y) };
+		vec2i_t map{ 
+			int(pos.x), 
+			int(pos.y) 
+		};
 
-		int hit = 0;
-		int side;
+		vec2f_t sideDist {
+			((rayDir.x < 0.0f)?(pos.x - map.x):(map.x + 1.0f - pos.x))*deltaDist.x,
+			((rayDir.y < 0.0f)?(pos.y - map.y):(map.y + 1.0f - pos.y))*deltaDist.y
+		};
+		
+		vec2i_t step {
+			(rayDir.x < 0.0f)?(-1):(1),
+			(rayDir.y < 0.0f)?(-1):(1)
+		};
 
-		step.x = (rayDir.x < 0.0f)?(-1):(1);
-		sideDist.x = ((rayDir.x < 0.0f)?(pos.x - map.x):(map.x + 1.0f - pos.x))*deltaDist.x;
-
-		step.y = (rayDir.y < 0.0f)?(-1):(1);
-		sideDist.y = ((rayDir.y < 0.0f)?(pos.y - map.y):(map.y + 1.0f - pos.y))*deltaDist.y;
-
-		while (hit == 0)
+		while (true)
 		{
-			if (sideDist.x < sideDist.y)
-			{
-				sideDist.x += deltaDist.x;
-				map.x += step.x;
-				side = 0;
-			}
-			else
-			{
-				sideDist.y += deltaDist.y;
-				map.y += step.y;
-				side = 1;
-			}
+			int side = (sideDist.x >= sideDist.y);
+
+			sideDist += vec2f_t{ (!side)*deltaDist.x, side*deltaDist.y };
+			map += vec2i_t{ (!side)*step.x, side*step.y };
+
 			if (sj::Cell(map.x, map.y) > 0)
 			{
-				hit = 1;
+				if (side == 0)
+				{
+					return hit_t{ (map.x - pos.x + (1.0f - step.x) / 2.0f) / rayDir.x, side, map };
+				}
+				else
+				{
+					return hit_t{ (map.y - pos.y + (1.0f - step.y) / 2.0f) / rayDir.y, side, map };
+				}
 			}
-		}
-
-		if (side == 0)
-		{
-			return hit_t{ (map.x - pos.x + (1.0f - step.x) / 2.0f) / rayDir.x, side, map };
-		}
-		else
-		{
-			return hit_t{ (map.y - pos.y + (1.0f - step.y) / 2.0f) / rayDir.y, side, map };
 		}
 	}
 
@@ -201,13 +200,7 @@ namespace sj {
 		}
 	}
 
-	struct wall_t {
-		float x;
-		int start;
-		int end;
-	};
-
-	wall_t RenderWalls(int x, hit_t hit, vec2f_t pos, vec2f_t rayDir) {
+	static wall_t RenderWalls(int x, hit_t hit, vec2f_t pos, vec2f_t rayDir) {
 		uint32_t texLine[WIN_HEIGHT];
 		float lineHeight = sj::WIN_HEIGHT / hit.dist;
 
@@ -255,7 +248,7 @@ namespace sj {
 		return wall_t{ wallX, drawStart, drawEnd };
 	}
 
-	vec2f_t FloorCast(hit_t hit, vec2f_t rayDir, wall_t wall) {
+	static vec2f_t FloorCast(hit_t hit, vec2f_t rayDir, wall_t wall) {
 		if (hit.side == 0 && rayDir.x > 0)
 		{
 			return vec2f_t{ (float)hit.map.x, (float)hit.map.y + wall.x };
@@ -271,7 +264,7 @@ namespace sj {
 		return vec2f_t{ hit.map.x + wall.x, hit.map.y + 1.0f };
 	}
 
-	inline uint32_t PutSideLine(const texture_t& tex, float invCurrentDist, float distWall, vec2f_t floorWall, vec2f_t pos, int x, int y)
+	static uint32_t PutSideLine(const texture_t& tex, float invCurrentDist, float distWall, vec2f_t floorWall, vec2f_t pos, int x, int y)
 	{
 			float weight = 1.0f / (invCurrentDist * distWall);
 
@@ -293,7 +286,7 @@ namespace sj {
 			return col;
 	}
 
-	void RenderFloor(const texture_t& tex, vec2f_t floorWall, float distWall, int wallEnd, vec2f_t pos, int x) {
+	static void RenderFloor(const texture_t& tex, vec2f_t floorWall, float distWall, int wallEnd, vec2f_t pos, int x) {
 		for (int y = wallEnd + 1; y < WIN_HEIGHT; y+=2)
 		{
 			float currentDist = (2.0f * y - WIN_HEIGHT) / WIN_HEIGHT;
@@ -305,7 +298,7 @@ namespace sj {
 		}
 	}
 
-	void RenderCelling(const texture_t& tex, vec2f_t ceilWall, float distWall, int wallStart, vec2f_t pos, int x) {
+	static void RenderCelling(const texture_t& tex, vec2f_t ceilWall, float distWall, int wallStart, vec2f_t pos, int x) {
 		for (int y = 0; y < wallStart; y+=2)
 		{
 			float currentDist = (WIN_HEIGHT - 2.0f * y) / WIN_HEIGHT;
@@ -346,7 +339,6 @@ namespace sj {
 		}
 
 	};
-
 
 	void RenderSprites(const std::vector<float>& wallDist, camera_t cam, const sprite_t* sprites, uint32_t spritesTotal) {
 		CompareSpriteDistance compDist(cam.pos);
