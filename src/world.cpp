@@ -134,56 +134,38 @@ namespace sj {
 		vec2i_t map;
 	};
 
-	hit_t CastRay(vec2f_t pos, vec2f_t rayDir, int x) {
+	hit_t CastRay(vec2f_t pos, vec2f_t rayDir) {
 
-		float sideDistX;
-		float sideDistY;
+		vec2f_t sideDist;
+		vec2f_t deltaDist{
+			std::abs(1.0f / rayDir.x),
+			std::abs(1.0f / rayDir.y)
+		};
 
-		float deltaDistX = std::abs(1.0f / rayDir.x);
-		float deltaDistY = std::abs(1.0f / rayDir.y);
-
-		int stepX;
-		int stepY;
+		vec2i_t step;
+		vec2i_t map{ int(pos.x), int(pos.y) };
 
 		int hit = 0;
 		int side;
 
-		vec2i_t map{ int(pos.x), int(pos.y) };
+		step.x = (rayDir.x < 0.0f)?(-1):(1);
+		sideDist.x = ((rayDir.x < 0.0f)?(pos.x - map.x):(map.x + 1.0f - pos.x))*deltaDist.x;
 
-		if (rayDir.x < 0.0f)
-		{
-			stepX = -1;
-			sideDistX = (pos.x - map.x) * deltaDistX;
-		}
-		else
-		{
-			stepX = 1;
-			sideDistX = (map.x + 1.0f - pos.x) * deltaDistX;
-		}
-
-		if (rayDir.y < 0.0f)
-		{
-			stepY = -1;
-			sideDistY = (pos.y - map.y) * deltaDistY;
-		}
-		else
-		{
-			stepY = 1;
-			sideDistY = (map.y + 1.0f - pos.y) * deltaDistY;
-		}
+		step.y = (rayDir.y < 0.0f)?(-1):(1);
+		sideDist.y = ((rayDir.y < 0.0f)?(pos.y - map.y):(map.y + 1.0f - pos.y))*deltaDist.y;
 
 		while (hit == 0)
 		{
-			if (sideDistX < sideDistY)
+			if (sideDist.x < sideDist.y)
 			{
-				sideDistX += deltaDistX;
-				map.x += stepX;
+				sideDist.x += deltaDist.x;
+				map.x += step.x;
 				side = 0;
 			}
 			else
 			{
-				sideDistY += deltaDistY;
-				map.y += stepY;
+				sideDist.y += deltaDist.y;
+				map.y += step.y;
 				side = 1;
 			}
 			if (sj::Cell(map.x, map.y) > 0)
@@ -194,11 +176,11 @@ namespace sj {
 
 		if (side == 0)
 		{
-			return hit_t{ (map.x - pos.x + (1 - stepX) / 2) / rayDir.x, side, map };
+			return hit_t{ (map.x - pos.x + (1.0f - step.x) / 2.0f) / rayDir.x, side, map };
 		}
 		else
 		{
-			return hit_t{ (map.y - pos.y + (1 - stepY) / 2) / rayDir.y, side, map };
+			return hit_t{ (map.y - pos.y + (1.0f - step.y) / 2.0f) / rayDir.y, side, map };
 		}
 	}
 
@@ -335,22 +317,19 @@ namespace sj {
 		}
 	}
 
-	void Render(vec2f_t pos, matf_t view, std::vector<float>* wallDist) {
+	void Render(camera_t cam, std::vector<float>* wallDist) {
 		float camPart = 2.0f / sj::WIN_WIDTH;
 
 		for (int x = 0; x < sj::WIN_WIDTH / 4; ++x) {
 			float camX = camPart * x * 4.0f - 1;
-			vec2f_t rayDir = {
-				view.t[0].x + view.t[1].x * camX,
-				view.t[0].y + view.t[1].y * camX 
-			};
+			vec2f_t rayDir = cam.view.t[0] + cam.view.t[1]*camX;
 
-			hit_t hit = CastRay(pos, rayDir, x);
+			hit_t hit = CastRay(cam.pos, rayDir);
 			(*wallDist)[x] = hit.dist;
-			wall_t wall = RenderWalls(x, hit, pos, rayDir);
+			wall_t wall = RenderWalls(x, hit, cam.pos, rayDir);
 			vec2f_t floorWall = FloorCast(hit, rayDir, wall);
-			RenderFloor(g_mainAtlas[16], floorWall, hit.dist, wall.end, pos, x);
-			RenderCelling(g_mainAtlas[17], floorWall, hit.dist, wall.start, pos, x);
+			RenderFloor(g_mainAtlas[16], floorWall, hit.dist, wall.end, cam.pos, x);
+			RenderCelling(g_mainAtlas[17], floorWall, hit.dist, wall.start, cam.pos, x);
 		}
 	}
 
@@ -369,8 +348,8 @@ namespace sj {
 	};
 
 
-	void RenderSprites(const std::vector<float>& wallDist, vec2f_t pos, matf_t view, const sprite_t* sprites, uint32_t spritesTotal) {
-		CompareSpriteDistance compDist(pos);
+	void RenderSprites(const std::vector<float>& wallDist, camera_t cam, const sprite_t* sprites, uint32_t spritesTotal) {
+		CompareSpriteDistance compDist(cam.pos);
 		std::vector<const sprite_t*> sortedSprites;
 
 		sortedSprites.reserve(spritesTotal);
@@ -379,13 +358,12 @@ namespace sj {
 		}
 		std::sort(sortedSprites.begin(), sortedSprites.end(), compDist);
 
-		matf_t invView = Inverse(view);
+		matf_t invView = Inverse(cam.view);
 
 		for (std::vector<const sprite_t*>::iterator i = sortedSprites.begin(), e = sortedSprites.end(); i!=e; ++i)
 		{
 			sprite_t tmp = *(*i);
-			tmp.pos.x -= pos.x;
-			tmp.pos.y -= pos.y;
+			tmp.pos -= cam.pos;
 
 			vec2f_t transform = invView*tmp.pos;
 			

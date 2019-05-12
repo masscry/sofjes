@@ -14,6 +14,19 @@ namespace sj {
       T x;
       T y;
     };
+
+    vec2_t<T>& operator -= (vec2_t<T> b) {
+      this->x -= b.x;
+      this->y -= b.y;
+      return *this;
+    }
+
+    vec2_t<T>& operator += (vec2_t<T> b) {
+      this->x += b.x;
+      this->y += b.y;
+      return *this;
+    }
+
   };
 
   template<typename T>
@@ -52,6 +65,16 @@ namespace sj {
       vec.x*mat.v[0][0] + vec.y*mat.v[0][1],
       vec.x*mat.v[1][0] + vec.y*mat.v[1][1]
     };
+  }
+
+  template<typename T>
+  vec2_t<T> operator * (vec2_t<T> a, T b) {
+    return vec2_t<T>{ a.x * b, a.y * b };
+  }
+
+  template<typename T>
+  vec2_t<T> operator + (vec2_t<T> a, vec2_t<T> b) {
+    return vec2_t<T>{ a.x + b.x, a.y + b.y };
   }
 
   template<typename T>

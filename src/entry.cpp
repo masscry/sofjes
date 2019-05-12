@@ -8,13 +8,14 @@
 
 int loop = 1;
 
-sj::vec2f_t pos = { 8.5f, 8.5f };
-
-sj::matf_t xdir{ 
-	{ 
-		{ -1.0f, 0.0f },
-		{ 0.0f, 1.0f } 
-	} 
+sj::camera_t cam = {
+	sj::matf_t{	
+		{ 
+			{ -1.0f, 0.0f },
+			{ 0.0f, 1.0f } 
+		} 
+	},
+	sj::vec2f_t{ 8.5f, 8.5f }
 };
 
 std::unordered_map<SDL_Keycode, bool> KEYS;
@@ -58,19 +59,19 @@ int main(int argc, char* argv[]) {
 			float walk = (float)(KEYS[SDLK_w] - KEYS[SDLK_s]);
 			float stride = (float)(KEYS[SDLK_d] - KEYS[SDLK_a]);
 
-			if (sj::Cell(int(pos.x + (walk * xdir.t[0].x + stride * xdir.t[1].x) * frameTime), int(pos.y)) == 0)
+			if (sj::Cell(int(cam.pos.x + (walk * cam.view.t[0].x + stride * cam.view.t[1].x) * frameTime), int(cam.pos.y)) == 0)
 			{
-				pos.x += (walk * xdir.t[0].x + stride * xdir.t[1].x) * frameTime;
+				cam.pos.x += (walk * cam.view.t[0].x + stride * cam.view.t[1].x) * frameTime;
 			}
-			if (sj::Cell(int(pos.x), int(pos.y + (walk * xdir.t[0].y + stride * xdir.t[1].y) * frameTime)) == 0)
+			if (sj::Cell(int(cam.pos.x), int(cam.pos.y + (walk * cam.view.t[0].y + stride * cam.view.t[1].y) * frameTime)) == 0)
 			{
-				pos.y += (walk * xdir.t[0].y + stride * xdir.t[1].y) * frameTime;
+				cam.pos.y += (walk * cam.view.t[0].y + stride * cam.view.t[1].y) * frameTime;
 			}
 
-			xdir = xdir * sj::RotationMatrix(rotate*frameTime);
+			cam.view = cam.view * sj::RotationMatrix(rotate*frameTime);
 
-			sj::Render(pos, xdir, &wallDist);
-			sj::RenderSprites(wallDist, pos, xdir, sprites, spritesTotal);
+			sj::Render(cam, &wallDist);
+			sj::RenderSprites(wallDist, cam, sprites, spritesTotal);
 			sj::UpdateWindow(frameTime);
 		}
 	}

@@ -26,15 +26,20 @@ namespace sj {
 		int tex;
 	};
 
+	struct camera_t {
+		matf_t view;
+		vec2f_t pos;
+	};
+
 	void CreateWindow();
 	void UpdateWindow(float frameTime);
 	void CloseWindow();
 
 	float FrameTime();
 
-	void Render(vec2f_t pos, matf_t view, std::vector<float>* wallDist);
+	void Render(camera_t cam, std::vector<float>* wallDist);
 
-	void RenderSprites(const std::vector<float>& wallDist, vec2f_t pos, matf_t view, const sprite_t* sprites, uint32_t spritesTotal);
+	void RenderSprites(const std::vector<float>& wallDist, camera_t cam, const sprite_t* sprites, uint32_t spritesTotal);
 
 }
 
